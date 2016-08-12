@@ -70,10 +70,10 @@ protected:
 	bool use_verlet, le_init, homo_ic_phi, homo_ic_chi;
 	int seed;
 	R tf;
-	int scale_interval, energy_interval, spectra_interval,
+	int scale_interval, energy_interval,
 		screen_interval, slice_interval, stats_interval,
 		twoptcorr_interval;
-	keyed_value<R, int> scale_intervals, energy_intervals, spectra_intervals,
+	keyed_value<R, int> scale_intervals, energy_intervals,
                 screen_intervals, slice_intervals, stats_intervals,
                 twoptcorr_intervals;
 
