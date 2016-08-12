@@ -124,7 +124,7 @@ void model<R>::set_output_directory(const char *uodn)
  * @endcode
  * @li -O: Use out-of-place transforms
  * @li -N \<int\>: The number of grid points per side of the box
- * @li -P \<int\>: The padding factor used for position-space integration
+ * @li -P \<int\>: (REMOVED) The padding factor used for position-space integration
  * @li -L \<real\>: The physical size of the box
  * @li -R \<int\>: The random seed
  * @li -o \<dir name\>: Set the output directory name
@@ -387,6 +387,11 @@ model<R>::model(int argc, char *argv[])
 			break;
 		case 'P':
 			fs.n_pad_factor = atoi(optarg);
+			if (fs.n_pad_factor != 1) {
+				std::cerr << "Support for padding != 1 has been removed."
+					  << std::endl;
+				exit(1);
+			}
 			break;
 		case 'L':
 			mp.len = atof(optarg);
@@ -759,7 +764,7 @@ model<R>::model(int argc, char *argv[])
 
 		hout << "\t-O: Use out-of-place transforms" << endl;
 		hout << "\t-N <int>: The number of grid points per side of the box" << endl;
-		hout << "\t-P <int>: The padding factor used for position-space integration" << endl;
+		hout << "\t-P <int>: (REMOVED) The padding factor used for position-space integration." << endl;
 		hout << "\t-L <real>: The physical size of the box" << endl;
 		hout << "\t-R <int>: The random seed" << endl;
 		hout << "\t-o <dir name>: Set the output directory name" << endl;
