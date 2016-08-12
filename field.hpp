@@ -76,7 +76,7 @@ public:
 	/** 
 	 * @brief The position-space data.
 	 *
-	 * @note The inner (z) dimension is padded to a size of n+2.
+	 * @note The inner (z) dimension is padded to a size of 2*(floor(n/2)+1).
 	 */
 
 	R *data;
