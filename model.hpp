@@ -71,10 +71,10 @@ protected:
 	int seed;
 	R tf;
 	int scale_interval, energy_interval,
-		screen_interval, slice_interval, stats_interval,
+		screen_interval, slice_interval,
 		twoptcorr_interval;
 	keyed_value<R, int> scale_intervals, energy_intervals,
-                screen_intervals, slice_intervals, stats_intervals,
+                screen_intervals, slice_intervals,
                 twoptcorr_intervals;
 
 protected:

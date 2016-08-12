@@ -35,7 +35,6 @@
 #include "defrost_style_initializer.hpp"
 #include "grid_funcs.hpp"
 #include "twoptcorr_outputter.hpp"
-#include "stats_outputter.hpp"
 #include "energy_outputter.hpp"
 
 #include <cstdlib>
@@ -209,7 +208,6 @@ void model<R>::set_output_directory(const char *uodn)
  *	twoptcorr
  *	screen
  *	slice
- *	stats
  *	all
  *	(intervals are specified as a number of iterations)
  * @endcode
@@ -243,12 +241,11 @@ template <typename R>
 model<R>::model(int argc, char *argv[])
 	: fs(64), use_verlet(true), le_init(false), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
 	  scale_interval(25), energy_interval(25),
-	  screen_interval(25), slice_interval(25), stats_interval(25), twoptcorr_interval(25),
+	  screen_interval(25), slice_interval(25), twoptcorr_interval(25),
 	  scale_intervals(scale_interval, 0.0, scale_interval, "t", "scale-factor output interval"),
 	  energy_intervals(energy_interval, 0.0, energy_interval, "t", "energy output interval"),
 	  screen_intervals(screen_interval, 0.0, screen_interval, "t", "screen output interval"),
 	  slice_intervals(slice_interval, 0.0, slice_interval, "t", "slice output interval"),
-	  stats_intervals(stats_interval, 0.0, stats_interval, "t", "stats output interval"),
 	  twoptcorr_intervals(twoptcorr_interval, 0.0, twoptcorr_interval, "t", "two-pt. corr. output interval"),
 	  phi("phi"), phidot("phidot"), chi("chi"), chidot("chidot"), gc(0), som(0), ics_scale(1), len0(1.0),
 	  vvwl(false), af(0.0), external_H0(false), ics_eff_size(0), phidot0pr(0.0), chidot0pr(0.0)
@@ -271,7 +268,7 @@ model<R>::model(int argc, char *argv[])
 
 	const char *interval_names[] = {
 		"scale", "energy",
-		"screen", "slice", "stats",
+		"screen", "slice",
 		"twoptcorr", "all", 0
 	};
 
@@ -672,9 +669,6 @@ model<R>::model(int argc, char *argv[])
 					else if (!strcmp(interval_names[index], "slice")) {
 						slice_intervals.add_value(start_time, iv);
 					}
-					else if (!strcmp(interval_names[index], "stats")) {
-						stats_intervals.add_value(start_time, iv);
-					}
 					else if (!strcmp(interval_names[index], "twoptcorr")) {
 						twoptcorr_intervals.add_value(start_time, iv);
 					}
@@ -683,7 +677,6 @@ model<R>::model(int argc, char *argv[])
 						energy_intervals.add_value(start_time, iv);
 						screen_intervals.add_value(start_time, iv);
 						slice_intervals.add_value(start_time, iv);
-						stats_intervals.add_value(start_time, iv);
 						twoptcorr_intervals.add_value(start_time, iv);
 					}
 				}
@@ -783,7 +776,6 @@ model<R>::model(int argc, char *argv[])
 	energy_intervals.finalize_values();
 	screen_intervals.finalize_values();
 	slice_intervals.finalize_values();
-	stats_intervals.finalize_values();
 	twoptcorr_intervals.finalize_values();
 
 	srand48(seed);
@@ -1034,7 +1026,6 @@ void model<R>::set_initial_conditions()
  * @li @ref info_txt
  * @li @ref sf_tsv
  * @li @ref energy_tsv
- * @li @ref stats_tsv
  * @li @ref twoptcorr_tsv
  * @li @ref slices
  *
@@ -1059,7 +1050,6 @@ void model<R>::evolve(integrator<R> *ig)
 {
 	int counter = 0;
 	twoptcorr_outputter<R> tpo(fs, mp, ts, phi, chi);
-	stats_outputter<R> sto(fs, mp, ts, phi, chi, phidot, chidot);
 	energy_outputter<R> eo(fs, mp, ts, phi, chi, phidot, chidot);
 	ofstream scaleof("sf.tsv");
 	scaleof << setprecision(30) << fixed;
@@ -1125,10 +1115,6 @@ void model<R>::evolve(integrator<R> *ig)
 			eo.output();
 		}
 
-		if (counter % stats_interval == 0) {
-			sto.output();
-		}
-
 		if (counter % twoptcorr_interval == 0) {
 			tpo.output();
 		}
@@ -1144,7 +1130,6 @@ void model<R>::evolve(integrator<R> *ig)
 		energy_intervals.advance(ts.t);
 		screen_intervals.advance(ts.t);
 		slice_intervals.advance(ts.t);
-		stats_intervals.advance(ts.t);
 		twoptcorr_intervals.advance(ts.t);
 
 		if (counter % screen_interval == 0) {
