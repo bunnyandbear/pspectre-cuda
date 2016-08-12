@@ -1,4 +1,5 @@
 if [[ $(which module) ]]; then
+    module load GCC/5.1.0
     module load CUDA/7.5.18
 fi
 
