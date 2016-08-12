@@ -29,7 +29,6 @@
 #include "model.hpp"
 #include "integrator.hpp"
 #include "verlet.hpp"
-#include "rk4.hpp"
 #include "initializer.hpp"
 #include "le_style_initializer.hpp"
 #include "defrost_style_initializer.hpp"
@@ -62,7 +61,6 @@ using namespace std;
 // Forward declaration of integrator classes...
 template <typename R> class integrator;
 template <typename R> class verlet;
-template <typename R> class rk4;
 
 template <typename R>
 const char *precision_name()
@@ -109,7 +107,6 @@ void model<R>::set_output_directory(const char *uodn)
  * @endcode
  *
  * @li -h: Display usage information and exit
- * @li -r: Use the RK4 integrator (default is the Verlet integrator)
  * @li -l: Use LatticeEasy-style initial conditions (default is DEFROST-style initial conditions)
  * @li -B: The base length scale (default is 1.0 to match LatticeEasy)
  * @li -V: Allow the field variance to change with L
@@ -219,11 +216,11 @@ void model<R>::set_output_directory(const char *uodn)
  * @section rexamples Examples
  *
  * The following runs the model with the default parameters except that it sets a 128^3 grid with dt = 0.0005. Also,
- * -r selects the RK4 integrator (Verlet is default). -l selects LE-style initial conditions. -I all=1 
+ * -l selects LE-style initial conditions. -I all=1 
  * sets all output intervals to 1 time step (the default is 25).
  *
  * @code
- * ./pspectre -N 128 -t 0.0005 -r -l -I all=1
+ * ./pspectre -N 128 -t 0.0005 -l -I all=1
  * @endcode
  *
  * The following runs the model with the default parameters and has binary slice outputs for the energy density, pressure
@@ -237,7 +234,7 @@ void model<R>::set_output_directory(const char *uodn)
 
 template <typename R>
 model<R>::model(int argc, char *argv[])
-	: fs(64), use_verlet(true), le_init(false), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
+	: fs(64), le_init(false), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
 	  scale_interval(25), energy_interval(25),
 	  screen_interval(25), slice_interval(25),
 	  scale_intervals(scale_interval, 0.0, scale_interval, "t", "scale-factor output interval"),
@@ -331,9 +328,6 @@ model<R>::model(int argc, char *argv[])
 		case 'h':
 			help_requested = true;
 			show_usage = true;
-			break;
-		case 'r':
-			use_verlet = false;
 			break;
 		case 'l':
 			le_init = true;
@@ -709,7 +703,6 @@ model<R>::model(int argc, char *argv[])
 		hout << endl;
 		
 		hout << "\t-h: Display usage information and exit" << endl;
-		hout << "\t-r: Use the RK4 integrator (default is the Verlet integrator)" << endl;
 		hout << "\t-l: Use LatticeEasy-style initial conditions (default is DEFROST-style initial conditions)" << endl;
 		hout << "\t-B: The base length scale (default is 1.0 to match LatticeEasy)" << endl;
 		hout << "\t-V: Allow the field variance to change with L" << endl;
@@ -1132,9 +1125,7 @@ void model<R>::run()
 
 	set_initial_conditions();
 	
-	integrator<R> *ig = use_verlet ?
-		(integrator<R> *) new verlet<R>(fs, mp, ts, phi, phidot, chi, chidot)
-		: (integrator<R> *) new rk4<R>(fs, mp, ts, phi, phidot, chi, chidot);
+	integrator<R> *ig = (integrator<R> *) new verlet<R>(fs, mp, ts, phi, phidot, chi, chidot);
 
 	cout << "Beginning field evolution..." << endl;
 	evolve(ig);
@@ -1180,7 +1171,7 @@ void model<R>::write_info_file()
 	info_file << endl;
 
 	info_file << "precision: " << precision_name<R>() << endl;
-	info_file << "integrator: " << (use_verlet ? "verlet" : "rk4") << endl;
+	info_file << "integrator: " << "verlet" << endl;
 	info_file << "initial conditions: " <<
 		(
 			(homo_ic_phi && homo_ic_chi) ? "homogeneous" : (le_init ? "latticeeasy" : "defrost")
