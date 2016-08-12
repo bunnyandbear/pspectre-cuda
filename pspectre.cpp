@@ -56,40 +56,8 @@
  * SpectRE should build and run on any POSIX-style operating system, and uses OpenMP for
  * shared-memory parallelism. It requires:
  * @li FFTW 3.
- * @li G++ (the GNU C++ compiler version 4+) or ICC (the Intel C++ compiler).
+ * @li G++ (the GNU C++ compiler version 4+).
  *
- * @section targets Targets
- * The following (phony) targets are defined:
- * @li rel - Build the release (optimized) spectre executable. This is the default target.
- * @li profile - Build the optimized profiling executable spectre-pg.
- * @li debug - Build the debug spectre-dbg executable.
- * @li debug-mudflap - Build the mudflap-enabled debug executable spectre-dbg-mf.
- * @li doc - Build the documentation (doxygen and dot required).
- * @li clean - Remove all generated files (including executables) except for the documentation.
- * @li clean-doc - Remove the documentation files.
- * @li clean-all - A combination of clean and clean-doc.
- * @li dist - A combination of clean-all and doc followed by the creation of a source archive.
- *
- * @section vars Variables
- * The make file recognizes the following variables which can be specified on the command line
- * prior to or after the target name(s):
- * @li USE_ICC=yes - Use the Intel C++ compiler instead of the GNU C++ compiler.
- *
- * @section bexamples Examples
- * To build spectre using g++ and FFTW:
- * @code
- * make
- * @endcode
- *
- * To build spectre-dbg using icc and FFTW:
- * @code
- * make USE_ICC=yes debug
- * @endcode
- *
- * @section compiler Compiler Selection
- * The name of the compiler used can be overridden by setting the GXX variable.
- * By default, this variable has the value g++ or icc. If an executable called
- * g++-4 is found in the current search path, then it is used in preference to g++.
  */
 
 #define _XOPEN_SOURCE 600
