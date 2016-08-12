@@ -33,8 +33,8 @@ void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
 	field<R> &phi, field<R> &chi,
 	R &avg_gradient_phi, R &avg_gradient_chi)
 {
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
 
 	R total_gradient_phi = 0.0, total_gradient_chi = 0.0;
 

@@ -47,11 +47,11 @@ void energy_outputter<R>::output(bool no_output)
 {
 	R avg_V = vi.integrate(phi, chi, ts.a);
 	
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
 
-	phidot.switch_state(momentum, true);
-	chidot.switch_state(momentum, true);
+	phidot.switch_state(momentum);
+	chidot.switch_state(momentum);
 	
 	R avg_phi_squared = 0.0, avg_chi_squared = 0.0,
 		avg_phidot_squared = 0.0, avg_chidot_squared = 0.0,

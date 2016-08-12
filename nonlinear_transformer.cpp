@@ -30,8 +30,8 @@ using namespace std;
 template <typename R>
 void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, field_state final_state)
 {
-	phi.switch_state(position, true);
-	chi.switch_state(position, true);
+	phi.switch_state(position);
+	chi.switch_state(position);
 
 	phi2chi.switch_state(uninitialized);
 	phi2chi.switch_state(position);

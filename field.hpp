@@ -68,7 +68,7 @@ public:
 public:
 	void construct(field_size &fs_);
 	void divby(R v);
-	void switch_state(field_state state_, bool mmo = false);
+	void switch_state(field_state state_);
 
 public:
 	field_size fs;

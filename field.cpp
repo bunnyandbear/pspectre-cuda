@@ -88,7 +88,7 @@ void field<R>::divby(R v)
 }
 
 template <typename R>
-void field<R>::switch_state(field_state state_, bool mmo)
+void field<R>::switch_state(field_state state_)
 {
 	if (state_ == uninitialized) {
 		state = uninitialized;

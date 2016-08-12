@@ -60,11 +60,11 @@ void slice_output_manager<R>::output()
 		(*it)->begin(bin_idx);
 	}
 	
-	phi.switch_state(position, true);
-	chi.switch_state(position, true);
+	phi.switch_state(position);
+	chi.switch_state(position);
 	
-	phidot.switch_state(position, true);
-	chidot.switch_state(position, true);
+	phidot.switch_state(position);
+	chidot.switch_state(position);
 
 	for (int i = 0; i < (slicedim > 2 ? slicelength : 1); i += sliceskip) {
 		for (int j = 0; j < (slicedim > 1 ? slicelength : 1); j += sliceskip) {

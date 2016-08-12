@@ -61,8 +61,8 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 {
 	R total_V = 0.0;
 
-	phi.switch_state(position, true);
-	chi.switch_state(position, true);
+	phi.switch_state(position);
+	chi.switch_state(position);
 	
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:total_V)

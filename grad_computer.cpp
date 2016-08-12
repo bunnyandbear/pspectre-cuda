@@ -30,8 +30,8 @@ using namespace std;
 template <typename R>
 void grad_computer<R>::compute(field_state final_state)
 {
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
 
 	phigradx.switch_state(uninitialized);
 	phigradx.switch_state(momentum);

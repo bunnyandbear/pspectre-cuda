@@ -43,10 +43,10 @@ void verlet<R>::initialize()
 
 	nlt.transform(phi, chi, ts.a);
 
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
-	phidot.switch_state(momentum, true);
-	chidot.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
+	phidot.switch_state(momentum);
+	chidot.switch_state(momentum);
 	
 	phiddot.switch_state(momentum);
 	chiddot.switch_state(momentum);
@@ -96,10 +96,10 @@ void verlet<R>::step()
 	ts.a += ts.adot * ts.dt + 0.5 * addot * pow<2>(ts.dt);
 	ts.physical_time += dptdt * ts.dt + 0.5 * ddptdt * pow<2>(ts.dt);
 
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
-	phidot.switch_state(momentum, true);
-	chidot.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
+	phidot.switch_state(momentum);
+	chidot.switch_state(momentum);
 	
 	phiddot.switch_state(momentum);
 	chiddot.switch_state(momentum);
@@ -152,8 +152,8 @@ void verlet<R>::step()
 
 	nlt.transform(phi, chi, ts.a);
 
-	phi.switch_state(momentum, true);
-	chi.switch_state(momentum, true);
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
 
 #ifdef _OPENMP
 #pragma omp parallel for
