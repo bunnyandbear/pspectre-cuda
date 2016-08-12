@@ -54,33 +54,29 @@ public:
 	typedef typename fft_dft_r2c_3d_plan<R>::complex_t complex_t;
 
 public:
-	field(field_size &fs_, bool oop = false, const char *name_ = 0)
+	field(field_size &fs_, const char *name_ = 0)
 		: state(uninitialized), name(name_)
 	{		
-		construct(fs_, oop);
+		construct(fs_);
 	}
 	
 	field(const char *name_ = 0)
-		: data(0), ldl(0), mdata(0), state(uninitialized), mdata_saved(0), name(name_) {};
+		: data(0), ldl(0), mdata(0), state(uninitialized), name(name_) {};
 
 	~field();
 
 public:
-	void construct(field_size &fs_, bool oop = false);
+	void construct(field_size &fs_);
 	void divby(R v);
 	void switch_state(field_state state_, bool mmo = false);
-
-public:
-	bool is_in_place()
-	{
-		return (data == ((R *) mdata));
-	}
 
 public:
 	field_size fs;
 
 	/** 
 	 * @brief The position-space data.
+	 *
+	 * @note The inner (z) dimension is padded to a size of n+2.
 	 */
 
 	R *data;
@@ -101,7 +97,6 @@ protected:
 	field_state state;
 	fft_dft_r2c_3d_plan<R> p2m_plan;
 	fft_dft_c2r_3d_plan<R> m2p_plan;
-	typename fft_dft_c2r_3d_plan<R>::complex_t *mdata_saved;
 
 public:
 	const char *name;

@@ -97,7 +97,7 @@ void model<R>::set_output_directory(const char *uodn)
  * SpectRE Usage:
  * @code
  * ./pspectre [-h]
- * ./pspectre [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-L <real>] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
+ * ./pspectre [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-N <int>] [-L <real>] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
  * @endcode
  *
  * @li -h: Display usage information and exit
@@ -110,7 +110,6 @@ void model<R>::set_output_directory(const char *uodn)
  *      phi
  *      chi
  * @endcode
- * @li -O: Use out-of-place transforms
  * @li -N \<int\>: The number of grid points per side of the box
  * @li -L \<real\>: The physical size of the box
  * @li -R \<int\>: The random seed
@@ -314,7 +313,6 @@ model<R>::model(int argc, char *argv[])
 	int slicedim = 3, slicelength = 0, sliceskip = 1;
 	bool sliceaverage = false, sliceflt = true;
 
-	bool oop = false;
 	string odn;
 
 	while ((opt = getopt(argc, argv, ":rlVB:hH:ON:P:L:R:p:o:t:T:A:s:S:I:z:e")) != -1) {
@@ -347,9 +345,6 @@ model<R>::model(int argc, char *argv[])
 					homo_ic_chi = true;
 				}
 			}
-			break;
-		case 'O':
-			oop = true;
 			break;
 		case 'e':
 			mp.pwr_exp = true;
@@ -688,7 +683,7 @@ model<R>::model(int argc, char *argv[])
 		
 		hout << "SpectRE Usage:" << endl;
 		hout << argv[0] << " [-h]" << endl;
-		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-L <real>] [-R <int>] "
+		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-N <int>] [-L <real>] [-R <int>] "
 			"[-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] "
 			"[-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] "
 			"[-I <name>=<value>[,<name>=<value>]*] "
@@ -708,7 +703,6 @@ model<R>::model(int argc, char *argv[])
 			hout << "\t\t" << field_names[i] << endl;
 		}
 
-		hout << "\t-O: Use out-of-place transforms" << endl;
 		hout << "\t-N <int>: The number of grid points per side of the box" << endl;
 		hout << "\t-L <real>: The physical size of the box" << endl;
 		hout << "\t-R <int>: The random seed" << endl;
@@ -769,10 +763,10 @@ model<R>::model(int argc, char *argv[])
 
 	fs.calculate_size_totals();
 
-	phi.construct(fs, oop);
-	phidot.construct(fs, oop);
-	chi.construct(fs, oop);
-	chidot.construct(fs, oop);
+	phi.construct(fs);
+	phidot.construct(fs);
+	chi.construct(fs);
+	chidot.construct(fs);
 
 	char *swd = 0; std::size_t swdl = 1024;
 	do {

@@ -37,35 +37,25 @@
 using namespace std;
 
 template <typename R>
-void field<R>::construct(field_size &fs_, bool oop)
+void field<R>::construct(field_size &fs_)
 {
 	fs = fs_;
-	ldl = oop ? fs.n : 2*(fs.n/2+1);
+	ldl = 2*(fs.n/2+1);
 
-	size_t alloc_size = sizeof(R) * fs.total_gridpoints;
 	size_t c_alloc_size = 2*sizeof(R) * fs.total_momentum_gridpoints;
 
 	mdata = (typename fft_dft_c2r_3d_plan<R>::complex_t *) fft_malloc<R>(c_alloc_size);
-	data = oop ? fft_malloc<R>(alloc_size) : (R *) mdata;
+	data = (R *) mdata;
 
-	// Out-of-place c2r implies FFTW_DESTROY_INPUT, data is saved to this array.
-	mdata_saved = oop ? (typename fft_dft_c2r_3d_plan<R>::complex_t *) fft_malloc<R>(c_alloc_size) : 0;
-
-	m2p_plan.construct(fs.n, fs.n, fs.n, mdata_saved ? mdata_saved : mdata, data, false);		
+	m2p_plan.construct(fs.n, fs.n, fs.n, mdata, data, false);		
 	p2m_plan.construct(fs.n, fs.n, fs.n, data, mdata, false);
 
-	if (oop) memset(data, 0, alloc_size);
 	memset(mdata, 0, c_alloc_size);
 }
 
 template <typename R>
 field<R>::~field()
 {
-	if (!is_in_place()) {
-		fft_free<R>((R *) mdata);
-		fft_free<R>((R *) mdata_saved);
-	}
-
 	fft_free<R>(data);
 }
 
@@ -100,18 +90,15 @@ void field<R>::divby(R v)
 template <typename R>
 void field<R>::switch_state(field_state state_, bool mmo)
 {
-	bool do_p2m = is_in_place() || !mmo;
-
 	if (state_ == uninitialized) {
 		state = uninitialized;
 	} else if (state == uninitialized) {
 		state = state_;
 	} else if ((state == position) && (state_ == momentum)) {
 		state = momentum;
-		if (do_p2m) p2m_plan.execute();
+		p2m_plan.execute();
 	} else if ((state == momentum) && (state_ == position)) {
 		state = position;
-		if (mdata_saved) memcpy(mdata_saved, mdata, 2*sizeof(R)*fs.total_momentum_gridpoints);
 		m2p_plan.execute();
 		divby(fs.total_gridpoints);
 	}
