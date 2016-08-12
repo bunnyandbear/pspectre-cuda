@@ -31,7 +31,7 @@
 #ifndef FFT_HPP
 #define FFT_HPP
 
-#include <fftw3.h>
+#include <cufftw.h>
 
 template <typename R>
 inline R* fft_malloc(size_t sz)

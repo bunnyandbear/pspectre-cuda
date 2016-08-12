@@ -1,1 +1,2 @@
-g++ -Wall -O3 -march=native -fopenmp *.cpp -lfftw3 -lfftw3_omp
+module load CUDA/7.5.18
+nvcc -O2 *.cpp -lfftw3
