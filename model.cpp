@@ -833,13 +833,6 @@ model<R>::model(int argc, char *argv[])
 		exit(help_requested ? 0 : 1);
 	}
 
-#ifdef MKL_NO_DCT
-	if (!le_init) {
-		cout << "Using LatticeEasy-style initial conditions (cannot use DEFROST-style initial conditions with MKL 10)" << endl;
-		le_init = true;
-	}
-#endif
-
 	ts.finalize_dts();
 
 	scale_intervals.finalize_values();

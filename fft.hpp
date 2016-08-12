@@ -31,16 +31,7 @@
 #ifndef FFT_HPP
 #define FFT_HPP
 
-#ifdef USE_MKL
-#include <fftw/fftw3.h>
-
-#ifdef HAS_FFTW3_MKL_H
-#include <fftw/fftw3_mkl.h>
-#endif
-
-#else
 #include <fftw3.h>
-#endif
 
 template <typename R>
 inline R* fft_malloc(size_t sz)

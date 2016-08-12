@@ -55,7 +55,7 @@
  * @section reqs Requirements
  * SpectRE should build and run on any POSIX-style operating system, and uses OpenMP for
  * shared-memory parallelism. It requires:
- * @li FFTW 3 or Intel's MKL version 10+.
+ * @li FFTW 3.
  * @li G++ (the GNU C++ compiler version 4+) or ICC (the Intel C++ compiler).
  *
  * @section targets Targets
@@ -74,19 +74,11 @@
  * The make file recognizes the following variables which can be specified on the command line
  * prior to or after the target name(s):
  * @li USE_ICC=yes - Use the Intel C++ compiler instead of the GNU C++ compiler.
- * @li USE_MKL=yes - Use the Intel Math Kernel Libraries intead of FFTW. The MKL FFTW wrapper
- * library is used, which is provided in source form with the MKL installation, and so the MKLROOT
- * environmental variable must be set appropriately.
  *
  * @section bexamples Examples
  * To build spectre using g++ and FFTW:
  * @code
  * make
- * @endcode
- *
- * To build spectre using icc and the MKL:
- * @code
- * make USE_ICC=yes USE_MKL=yes
  * @endcode
  *
  * To build spectre-dbg using icc and FFTW:
