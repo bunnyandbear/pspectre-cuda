@@ -104,22 +104,12 @@ void field<R>::switch_state(field_state state_, bool mmo)
 
 	if (state_ == uninitialized) {
 		state = uninitialized;
-		return;
-	}
-	else if (state == uninitialized) {
+	} else if (state == uninitialized) {
 		state = state_;
-		return;
-	}
-	else if (state_ == state) {
-		return;
-	}
-
-	if ((state == position) && (state_ == momentum)) {
+	} else if ((state == position) && (state_ == momentum)) {
 		state = momentum;
 		if (do_p2m) p2m_plan.execute();
-	}
-
-	if ((state == momentum) && (state_ == position)) {
+	} else if ((state == momentum) && (state_ == position)) {
 		state = position;
 		if (mdata_saved) memcpy(mdata_saved, mdata, 2*sizeof(R)*fs.total_momentum_gridpoints);
 		m2p_plan.execute();
