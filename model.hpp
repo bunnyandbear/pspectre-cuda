@@ -66,7 +66,7 @@ protected:
 	field_size fs;
 	model_params<R> mp;
 	time_state<R> ts;
-	bool use_verlet, le_init, homo_ic_phi, homo_ic_chi;
+	bool use_verlet, le_init = true, homo_ic_phi, homo_ic_chi;
 	int seed;
 	R tf;
 	int scale_interval, energy_interval,

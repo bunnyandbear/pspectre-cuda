@@ -54,60 +54,6 @@ inline void fft_free<double>(double *ptr)
 	return fftw_free(ptr);
 }
 
-enum fft_r2r_kind
-{
-	r2hc = FFTW_R2HC,
-	hc2r = FFTW_HC2R,
-	dht = FFTW_DHT,
-	redft00 = FFTW_REDFT00,
-	redft10 = FFTW_REDFT10,
-	redft01 = FFTW_REDFT01,
-	redft11 = FFTW_REDFT11,
-	rodft00 = FFTW_RODFT00,
-	rodft10 = FFTW_RODFT10,
-	rodft01 = FFTW_RODFT01,
-	rodft11 = FFTW_RODFT11
-};
-
-template <typename R>
-class fft_r2r_1d_plan {};
-
-template <>
-class fft_r2r_1d_plan<double>
-{
-public:
-	fft_r2r_1d_plan(int n, double *in, double *out, fft_r2r_kind kind, bool estimate = true)
-	{
-		construct(n, in, out, kind, estimate);
-	}
-	
-	fft_r2r_1d_plan()
-		: plan(0) {}
-	
-	~fft_r2r_1d_plan()
-	{
-		fftw_destroy_plan(plan);
-	}
-	
-public:
-	void construct(int n, double *in, double *out, fft_r2r_kind kind, bool estimate = true)
-	{
-		plan = fftw_plan_r2r_1d(n, in, out, (fftw_r2r_kind) kind, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}	
-
-	void execute()
-	{
-		fftw_execute(plan);
-	}
-
-	bool constructed() {
-		return plan == 0;
-	}
-
-protected:
-	fftw_plan plan;
-};
-
 template <typename R>
 class fft_dft_c2r_3d_plan {};
 

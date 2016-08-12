@@ -31,7 +31,6 @@
 #include "verlet.hpp"
 #include "initializer.hpp"
 #include "le_style_initializer.hpp"
-#include "defrost_style_initializer.hpp"
 #include "grid_funcs.hpp"
 #include "energy_outputter.hpp"
 
@@ -101,7 +100,6 @@ void model<R>::set_output_directory(const char *uodn)
  * @endcode
  *
  * @li -h: Display usage information and exit
- * @li -l: Use LatticeEasy-style initial conditions (default is DEFROST-style initial conditions)
  * @li -B: The base length scale (default is 1.0 to match LatticeEasy)
  * @li -V: Allow the field variance to change with L
  * @li -e: Use power-law expansion
@@ -226,7 +224,7 @@ void model<R>::set_output_directory(const char *uodn)
 
 template <typename R>
 model<R>::model(int argc, char *argv[])
-	: fs(64), le_init(false), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
+	: fs(64), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
 	  scale_interval(25), energy_interval(25),
 	  screen_interval(25), slice_interval(25),
 	  scale_intervals(scale_interval, 0.0, scale_interval, "t", "scale-factor output interval"),
@@ -318,9 +316,6 @@ model<R>::model(int argc, char *argv[])
 		case 'h':
 			help_requested = true;
 			show_usage = true;
-			break;
-		case 'l':
-			le_init = true;
 			break;
 		case 'B':
 			len0 = atof(optarg);
@@ -687,7 +682,6 @@ model<R>::model(int argc, char *argv[])
 		hout << endl;
 		
 		hout << "\t-h: Display usage information and exit" << endl;
-		hout << "\t-l: Use LatticeEasy-style initial conditions (default is DEFROST-style initial conditions)" << endl;
 		hout << "\t-B: The base length scale (default is 1.0 to match LatticeEasy)" << endl;
 		hout << "\t-V: Allow the field variance to change with L" << endl;
 		hout << "\t-e: Use power-law expansion" << endl;
@@ -885,11 +879,8 @@ void model<R>::set_initial_conditions()
 	}
 
 	if (!homo_ic_phi || !homo_ic_chi) {
-		initializer<R> *init = le_init ?
-			(initializer<R> *) new le_style_initializer<R>(fs, mp, 
-				phi, phidot, chi, chidot, ts.adot, len0)
-			: (initializer<R> *) new defrost_style_initializer<R>(fs, mp, 
-				phi, phidot, chi, chidot, ts.adot);
+		initializer<R> *init = (initializer<R> *) new le_style_initializer<R>
+			(fs, mp, phi, phidot, chi, chidot, ts.adot, len0);
 
 		init->initialize();
 
@@ -1154,7 +1145,7 @@ void model<R>::write_info_file()
 	info_file << "integrator: " << "verlet" << endl;
 	info_file << "initial conditions: " <<
 		(
-			(homo_ic_phi && homo_ic_chi) ? "homogeneous" : (le_init ? "latticeeasy" : "defrost")
+			(homo_ic_phi && homo_ic_chi) ? "homogeneous" : "latticeeasy"
 		) << endl;
 	if (le_init) {
 		info_file << "base length scale: " << len0 << endl;
