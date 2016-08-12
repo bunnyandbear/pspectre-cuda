@@ -221,7 +221,6 @@ void model<R>::set_output_directory(const char *uodn)
  *	all
  *	(intervals are specified as a number of iterations)
  * @endcode
- * @li --long: Run using long-double (extended) precision (this must be the *last* command-line option argument)
  * @li \@\<file name\>: The name of a parameters file. The parameters file has the same syntax as the command
  * line except that it may be divided among multiple lines and may contain comment lines which begin with
  * a \# character.
@@ -262,9 +261,6 @@ model<R>::model(int argc, char *argv[])
 		twoptcorr_intervals(twoptcorr_interval, 0.0, twoptcorr_interval, "t", "two-pt. corr. output interval"),
 		phi("phi"), phidot("phidot"), chi("chi"), chidot("chidot"), gc(0), som(0), ics_scale(1), len0(1.0),
 		vvwl(false), af(0.0), external_H0(false), ics_eff_size(0), phidot0pr(0.0), chidot0pr(0.0)
-#ifdef HAVE_PRIVATE
-		, priv(phi, chi)
-#endif
 {
 	char *subopts, *value;
 	int opt;
@@ -715,22 +711,6 @@ model<R>::model(int argc, char *argv[])
 				}
 			}
 			break;
-		case 'z':
-#ifdef HAVE_PRIVATE
-			subopts = optarg;
-			while (*subopts != '\0') {
-				int index = getsubopt(&subopts, (char**) priv.get_opt_names(), &value);
-				if (index < 0) {
-					cerr << "Invalid parameter specification: " << value << endl;
-					show_usage = true;
-				}
-				else if (!priv.process_opt(priv.get_opt_names()[index], value)) {
-					cerr << "No/Invalid value specified for parameter: " << priv.get_opt_names()[index] << endl;
-					show_usage = true;
-				}
-			}
-#endif
-			break;
 		case ':':
 			cerr << "Missing operand for option " << (char) optopt << endl;
 			show_usage = true;
@@ -760,9 +740,6 @@ model<R>::model(int argc, char *argv[])
 			"[-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] "
 			"[-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] "
 			"[-I <name>=<value>[,<name>=<value>]*] "
-#ifdef HAVE_PRIVATE
-			"[-z <name>[=<value>][,<name>[=<value>]]*] "
-#endif
 			"[@<file name>]"
 			<< endl;
 		hout << endl;
@@ -818,15 +795,6 @@ model<R>::model(int argc, char *argv[])
 			hout << "\t\t" << interval_names[i] << endl;
 		}
 		hout << "\t\t(intervals are specified as a number of iterations)" << endl;
-
-#ifdef HAVE_PRIVATE
-		hout << "\t-z <name>[=<value>][,<name>[=<value>]]*: Set a private option value. Valid options are:" << endl;
-		
-		for (int i = 0; priv.get_opt_names()[i]; ++i) {
-			hout << "\t\t" << priv.get_opt_names()[i] << endl;
-		}
-		hout << "\t\t(some options may not take a value)" << endl;
-#endif
 
 		hout << "\t@<file name>: The name of a parameters file" << endl;
 
@@ -913,10 +881,6 @@ model<R>::model(int argc, char *argv[])
 	if (slice_p) som->add_outputter("p", grid_funcs<R>::compute_p);
 	if (slice_p_phys) som->add_outputter("p_phys", grid_funcs<R>::compute_p_phys);
 	if (slice_gpot) som->add_outputter("gpot", grid_funcs<R>::compute_gpot);
-
-#ifdef HAVE_PRIVATE
-	priv.initialize(fs);
-#endif
 }
 
 template <typename R>
@@ -1291,11 +1255,6 @@ void model<R>::evolve(integrator<R> *ig)
 
 		ig->step();
 
-#ifdef HAVE_PRIVATE
-		priv.set_sf_info(mp, ts);
-		priv.evolve(fs, mp, ts, counter);
-#endif
-
 		ts.advance();
 		scale_intervals.advance(ts.t);
 		energy_intervals.advance(ts.t);
@@ -1398,11 +1357,6 @@ void model<R>::write_info_file()
 	ts.dt_summary(info_file);
 
 	info_file << endl;
-
-#ifdef HAVE_PRIVATE
-	priv.info_file_output(info_file);
-	info_file << endl;
-#endif
 }
 
 // Explicit instantiations

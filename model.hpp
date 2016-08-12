@@ -40,10 +40,6 @@
 #include "grad_computer.hpp"
 #include "gpot_computer.hpp"
 
-#ifdef HAVE_PRIVATE
-#include "private/private_globals.hpp"
-#endif
-
 template <typename R>
 class model
 {
@@ -97,10 +93,6 @@ protected:
 	std::string start_wd;
 	int ics_eff_size;
 	R phidot0pr, chidot0pr;
-
-#ifdef HAVE_PRIVATE
-	private_globals<R> priv;
-#endif
 };
 
 #endif // MODEL_HPP
