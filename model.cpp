@@ -74,12 +74,6 @@ const char *precision_name<double>()
 	return "double";
 }
 
-template <>
-const char *precision_name<long double>()
-{
-	return "extended";
-}
-
 template <typename R>
 void model<R>::set_output_directory(const char *uodn)
 {
