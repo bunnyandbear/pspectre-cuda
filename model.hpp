@@ -38,7 +38,6 @@
 #include "integrator.hpp"
 #include "slice_output_manager.hpp"
 #include "grad_computer.hpp"
-#include "gpot_computer.hpp"
 
 template <typename R>
 class model
@@ -79,7 +78,6 @@ protected:
 	field<R> phi, phidot;
 	field<R> chi, chidot;
 	grad_computer<R> *gc;
-	gpot_computer<R> *gpotc;
 	slice_output_manager<R> *som;
 	R ics_scale;
 	R len0;

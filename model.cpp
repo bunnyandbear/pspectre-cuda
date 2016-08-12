@@ -179,7 +179,6 @@ void model<R>::set_output_directory(const char *uodn)
  *	rho_phys
  *	p
  *	p_phys
- *	gpot
  * @endcode
  * @li -S \<name\>[=\<value\>][,\<name\>[=\<value\>]]*: Set a slice output option value. Valid options are:
  * @code
@@ -221,7 +220,7 @@ void model<R>::set_output_directory(const char *uodn)
  * over every eight-point cube (since the dimension is 3).
  *
  * @code
- * ./pspectre -s rho,p,gpot -S dim=3,length=32,skip=1,avg
+ * ./pspectre -s rho,p -S dim=3,length=32,skip=1,avg
  * @endcode
  */
 
@@ -281,7 +280,7 @@ model<R>::model(int argc, char *argv[])
 		"grad_phi_phys_y", "grad_chi_phys_y",
 		"grad_phi_phys_z", "grad_chi_phys_z",
 		"rho", "rho_phys", "p", "p_phys",
-		"gpot", 0
+		0
 	};
 
 	const char *field_names[] = {
@@ -307,8 +306,7 @@ model<R>::model(int argc, char *argv[])
 		slice_grad_phi_phys_y = false, slice_grad_chi_phys_y = false,
 		slice_grad_phi_phys_z = false, slice_grad_chi_phys_z = false,
 		slice_rho = false, slice_p = false,
-		slice_rho_phys = false, slice_p_phys = false,
-		slice_gpot = false;
+		slice_rho_phys = false, slice_p_phys = false;
 
 	int slicedim = 3, slicelength = 0, sliceskip = 1;
 	bool sliceaverage = false, sliceflt = true;
@@ -583,9 +581,6 @@ model<R>::model(int argc, char *argv[])
 				else if (!strcmp(slice_names[index], "p_phys")) {
 					slice_p_phys = true;
 				}
-				else if (!strcmp(slice_names[index], "gpot")) {
-					slice_gpot = true;
-				}
 			}
 			break;
 		case 'S':
@@ -780,8 +775,7 @@ model<R>::model(int argc, char *argv[])
 	set_output_directory(odn.c_str());
 
 	gc = new grad_computer<R>(fs, mp, phi, chi);
-	gpotc = new gpot_computer<R>(fs, mp, ts, phi, chi, phidot, chidot, *gc);
-	som = new slice_output_manager<R>(fs, mp, ts, phi, chi, phidot, chidot, *gc, *gpotc,
+	som = new slice_output_manager<R>(fs, mp, ts, phi, chi, phidot, chidot, *gc,
 		slicedim, slicelength, sliceskip, sliceaverage, sliceflt);
 	
 	if (slice_phi) som->add_outputter("phi", grid_funcs<R>::compute_phi);
@@ -820,14 +814,12 @@ model<R>::model(int argc, char *argv[])
 	if (slice_rho_phys) som->add_outputter("rho_phys", grid_funcs<R>::compute_rho_phys);
 	if (slice_p) som->add_outputter("p", grid_funcs<R>::compute_p);
 	if (slice_p_phys) som->add_outputter("p_phys", grid_funcs<R>::compute_p_phys);
-	if (slice_gpot) som->add_outputter("gpot", grid_funcs<R>::compute_gpot);
 }
 
 template <typename R>
 model<R>::~model()
 {
 	delete gc;
-	delete gpotc;
 	delete som;
 }
 

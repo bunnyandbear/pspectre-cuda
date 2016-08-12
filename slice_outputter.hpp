@@ -47,7 +47,7 @@ class slice_outputter
 public:
 	typedef R (*var_func)(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+		R phigrady, R chigrady, R phigradz, R chigradz);
 
 public:
 	slice_outputter(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_,
@@ -60,7 +60,7 @@ public:
 	void flush();
 	void advance();
 	void accumulate(R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+		R phigrady, R chigrady, R phigradz, R chigradz);
 
 protected:
 	field_size &fs;

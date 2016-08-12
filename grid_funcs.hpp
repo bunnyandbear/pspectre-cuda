@@ -50,151 +50,147 @@ struct grid_funcs {
 	// These functions all have the same signature for use with the slice output classes.
 	static R compute_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_phidot(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_chidot(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
-
-	static R compute_gpot(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_V_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_V(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_T_phi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_T_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_T_chi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_T_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_phi_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_G_chi_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_phi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_chi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_phi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_chi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_phi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_grad_chi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_rho_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_rho(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_p_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 
 	static R compute_p(field_size &fs, model_params<R> &mp, time_state<R> &ts,
 			R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-			R phigrady, R chigrady, R phigradz, R chigradz, R gpot);
+			R phigrady, R chigrady, R phigradz, R chigradz);
 };
 
 #endif // GRID_FUNCS_HPP

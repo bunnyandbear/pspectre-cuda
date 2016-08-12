@@ -54,7 +54,6 @@ void slice_output_manager<R>::output()
 	}
 	
 	gc.compute();
-	gpotc.compute(position, true);
 	
 	for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
 		it != outputters.end(); ++it) {
@@ -80,11 +79,10 @@ void slice_output_manager<R>::output()
 								for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
 									it != outputters.end(); ++it) {
 									(*it)->accumulate(phi.data[fdx], chi.data[fdx],
-										phidot.data[fdx], chidot.data[fdx],
-										gc.phigradx.data[idx], gc.chigradx.data[idx],
-										gc.phigrady.data[idx], gc.chigrady.data[idx],
-										gc.phigradz.data[idx], gc.chigradz.data[idx],
-										gpotc.gpot.data[idx]);
+											  phidot.data[fdx], chidot.data[fdx],
+											  gc.phigradx.data[idx], gc.chigradx.data[idx],
+											  gc.phigrady.data[idx], gc.chigrady.data[idx],
+											  gc.phigradz.data[idx], gc.chigradz.data[idx]);
 								}
 							}
 						}
@@ -101,11 +99,10 @@ void slice_output_manager<R>::output()
 					for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
 						it != outputters.end(); ++it) {
 						(*it)->accumulate(phi.data[fdx], chi.data[fdx],
-							phidot.data[fdx], chidot.data[fdx],
-							gc.phigradx.data[idx], gc.chigradx.data[idx],
-							gc.phigrady.data[idx], gc.chigrady.data[idx],
-							gc.phigradz.data[idx], gc.chigradz.data[idx],
-							gpotc.gpot.data[idx]);
+								  phidot.data[fdx], chidot.data[fdx],
+								  gc.phigradx.data[idx], gc.chigradx.data[idx],
+								  gc.phigrady.data[idx], gc.chigrady.data[idx],
+								  gc.phigradz.data[idx], gc.chigradz.data[idx]);
 						(*it)->advance();
 					}
 				}

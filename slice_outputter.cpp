@@ -94,10 +94,10 @@ void slice_outputter<R>::advance()
 
 template <typename R>
 void slice_outputter<R>::accumulate(R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-	R phigrady, R chigrady, R phigradz, R chigradz, R gpot)
+	R phigrady, R chigrady, R phigradz, R chigradz)
 {
 	buffer[cp] += vf(fs, mp, ts, phi, chi, phidot, chidot, phigradx, chigradx,
-		phigrady, chigrady, phigradz, chigradz, gpot);
+		phigrady, chigrady, phigradz, chigradz);
 	++cn;
 }
 
