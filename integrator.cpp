@@ -66,6 +66,3 @@ void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
 
 // Explicit instantiations
 template class integrator<double>;
-#ifdef USE_LD
-template class integrator<long double>;
-#endif

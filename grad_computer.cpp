@@ -97,6 +97,3 @@ void grad_computer<R>::compute(field_state final_state)
 
 // Explicit instantiations
 template class grad_computer<double>;
-#ifdef USE_LD
-template class grad_computer<long double>;
-#endif

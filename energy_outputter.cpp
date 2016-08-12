@@ -222,6 +222,3 @@ void energy_outputter<R>::output(bool no_output)
 
 // Explicit instantiations
 template class energy_outputter<double>;
-#ifdef USE_LD
-template class energy_outputter<long double>;
-#endif

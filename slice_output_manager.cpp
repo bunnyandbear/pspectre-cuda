@@ -123,6 +123,3 @@ void slice_output_manager<R>::output()
 
 // Explicit instantiations
 template class slice_output_manager<double>;
-#ifdef USE_LD
-template class slice_output_manager<long double>;
-#endif

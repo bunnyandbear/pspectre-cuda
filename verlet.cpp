@@ -199,6 +199,3 @@ void verlet<R>::step()
 
 // Explicit instantiations
 template class verlet<double>;
-#ifdef USE_LD
-template class verlet<long double>;
-#endif

@@ -144,6 +144,3 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 
 // Explicit instantiations
 template class nonlinear_transformer<double>;
-#ifdef USE_LD
-template class nonlinear_transformer<long double>;
-#endif

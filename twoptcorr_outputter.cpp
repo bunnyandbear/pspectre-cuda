@@ -161,6 +161,3 @@ void twoptcorr_outputter<R>::output()
 
 // Explicit instantiations
 template class twoptcorr_outputter<double>;
-#ifdef USE_LD
-template class twoptcorr_outputter<long double>;
-#endif

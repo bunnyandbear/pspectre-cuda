@@ -118,6 +118,3 @@ void spectra_outputter<R>::output()
 
 // Explicit instantiations
 template class spectra_outputter<double>;
-#ifdef USE_LD
-template class spectra_outputter<long double>;
-#endif

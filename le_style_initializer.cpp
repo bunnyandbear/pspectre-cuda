@@ -183,6 +183,3 @@ void le_style_initializer<R>::initialize()
 }
 
 template class le_style_initializer<double>;
-#ifdef USE_LD
-template class le_style_initializer<long double>;
-#endif

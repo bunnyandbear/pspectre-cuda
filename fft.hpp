@@ -38,10 +38,6 @@
 #include <fftw/fftw3_mkl.h>
 #endif
 
-#ifdef USE_LD
-#error MKL does not support long double precision.
-#endif
-
 #else
 #include <fftw3.h>
 #endif
@@ -58,14 +54,6 @@ inline double *fft_malloc<double>(size_t sz)
 	return (double *) fftw_malloc(sz);
 }
 
-#ifdef USE_LD
-template <>
-inline long double *fft_malloc<long double>(size_t sz)
-{
-	return (long double *) fftwl_malloc(sz);
-}
-#endif
-
 template <typename R>
 inline void fft_free(R *ptr) {}
 
@@ -74,14 +62,6 @@ inline void fft_free<double>(double *ptr)
 {
 	return fftw_free(ptr);
 }
-
-#ifdef USE_LD
-template <>
-inline void fft_free<long double>(long double *ptr)
-{
-	return fftwl_free(ptr);
-}
-#endif
 
 enum fft_r2r_kind
 {
@@ -137,44 +117,6 @@ protected:
 	fftw_plan plan;
 };
 
-#ifdef USE_LD
-template <>
-class fft_r2r_1d_plan<long double>
-{
-public:
-	fft_r2r_1d_plan(int n, long double *in, long double *out, fft_r2r_kind kind, bool estimate = true)
-	{
-		construct(n, in, out, kind, estimate);
-	}
-	
-	fft_r2r_1d_plan()
-		: plan(0) {}
-	
-	~fft_r2r_1d_plan()
-	{
-		fftwl_destroy_plan(plan);
-	}
-	
-public:
-	void construct(int n, long double *in, long double *out, fft_r2r_kind kind, bool estimate = true)
-	{
-		plan = fftwl_plan_r2r_1d(n, in, out, (fftwl_r2r_kind) kind, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}	
-
-	void execute()
-	{
-		fftwl_execute(plan);
-	}
-
-	bool constructed() {
-		return plan == 0;
-	}
-
-protected:
-	fftwl_plan plan;
-};
-#endif
-
 template <typename R>
 class fft_dft_c2r_3d_plan {};
 
@@ -217,47 +159,6 @@ protected:
 	fftw_plan plan;
 };
 
-#ifdef USE_LD
-template <>
-class fft_dft_c2r_3d_plan<long double>
-{
-public:
-	typedef fftwl_complex complex_t;
-
-public:
-	fft_dft_c2r_3d_plan(int n0, int n1, int n2, complex_t *in, long double *out, bool estimate = true)
-	{
-		construct(n0, n1, n2, in, out, estimate);
-	}
-	
-	fft_dft_c2r_3d_plan()
-		: plan(0) {}
-
-	~fft_dft_c2r_3d_plan()
-	{
-		fftwl_destroy_plan(plan);
-	}
-
-public:
-	void construct(int n0, int n1, int n2, complex_t *in, long double *out, bool estimate = true)
-	{
-		plan = fftwl_plan_dft_c2r_3d(n0, n1, n2, in, out, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}
-
-	void execute()
-	{
-		fftwl_execute(plan);
-	}
-
-	bool constructed() {
-		return plan == 0;
-	}
-
-protected:
-	fftwl_plan plan;
-};
-#endif
-
 template <typename R>
 class fft_dft_r2c_3d_plan {};
 
@@ -299,46 +200,5 @@ public:
 protected:
 	fftw_plan plan;
 };
-
-#ifdef USE_LD
-template <>
-class fft_dft_r2c_3d_plan<long double>
-{
-public:
-	typedef fftwl_complex complex_t;
-
-public:
-	fft_dft_r2c_3d_plan(int n0, int n1, int n2, long double *in, complex_t *out, bool estimate = true)
-	{
-		construct(n0, n1, n2, in, out, estimate);
-	}
-	
-	fft_dft_r2c_3d_plan()
-		: plan(0) {}
-
-	~fft_dft_r2c_3d_plan()
-	{
-		fftwl_destroy_plan(plan);
-	}
-
-public:
-	void execute()
-	{
-		fftwl_execute(plan);
-	}
-	
-	void construct(int n0, int n1, int n2, long double *in, complex_t *out, bool estimate = true)
-	{
-		plan = fftwl_plan_dft_r2c_3d(n0, n1, n2, in, out, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}
-
-	bool constructed() {
-		return plan == 0;
-	}
-
-protected:
-	fftwl_plan plan;
-};
-#endif
 
 #endif // FFT_HPP

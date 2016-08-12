@@ -914,7 +914,4 @@ void private_globals<R>::jtg_spectrum(field_size &fs, model_params<R> &mp, time_
  
 // Explicit instantiations
 template struct private_globals<double>;
-#ifdef USE_LD
-template struct private_globals<long double>;
-#endif
 

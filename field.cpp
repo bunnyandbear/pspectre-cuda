@@ -424,6 +424,3 @@ void field<R>::unpad_momentum_grid()
 
 // Explicit instantiations
 template class field<double>;
-#ifdef USE_LD
-template class field<long double>;
-#endif

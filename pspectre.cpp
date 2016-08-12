@@ -77,9 +77,6 @@
  * @li USE_MKL=yes - Use the Intel Math Kernel Libraries intead of FFTW. The MKL FFTW wrapper
  * library is used, which is provided in source form with the MKL installation, and so the MKLROOT
  * environmental variable must be set appropriately.
- * @li USE_LD=yes - Enable long-double support (not supported when using MKL). If the fftwl-wisdom
- * utility exists in a directory in the current search path, then long double support is active by
- * default.
  *
  * @section bexamples Examples
  * To build spectre using g++ and FFTW:
@@ -147,11 +144,6 @@ int main(int argc, char *argv[])
 	fftw_init_threads(); //Initialization to use threads for FFTW
 	fftw_plan_with_nthreads(omp_get_max_threads());
 
-#ifdef USE_LD
-	fftwl_init_threads();
-	fftwl_plan_with_nthreads(omp_get_max_threads());
-#endif
-
 	cout << "Initialized FFT library with " << omp_get_max_threads() << " threads." << endl;
 #endif
 
@@ -207,20 +199,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-#ifdef USE_LD
-	// If the *last* argument is --long, then use long doubles
-	if (args.size() > 1 && !strcmp(args[args.size()-1], "--long")) {
-		args.pop_back();
-		model<long double> mdl(args.size(), &args[0]);
-		mdl.run();
-	}
-	else {
-#endif
-		model<double> mdl(args.size(), &args[0]);
-		mdl.run();
-#ifdef USE_LD
-	}
-#endif
+	model<double> mdl(args.size(), &args[0]);
+	mdl.run();
 
 	if (!first_line) {
 		wordfree(&we);
@@ -232,8 +212,4 @@ int main(int argc, char *argv[])
 // Explicit instantiations
 template struct model_params<double>;
 template struct time_state<double>;
-#ifdef USE_LD
-template struct model_params<long double>;
-template struct time_state<long double>;
-#endif
 

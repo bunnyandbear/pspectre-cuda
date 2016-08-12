@@ -109,6 +109,3 @@ void defrost_style_initializer<R>::initialize()
 }
 
 template class defrost_style_initializer<double>;
-#ifdef USE_LD
-template class defrost_style_initializer<long double>;
-#endif

@@ -763,9 +763,6 @@ model<R>::model(int argc, char *argv[])
 #ifdef HAVE_PRIVATE
 			"[-z <name>[=<value>][,<name>[=<value>]]*] "
 #endif
-#ifdef USE_LD
-			"[--long] "
-#endif
 			"[@<file name>]"
 			<< endl;
 		hout << endl;
@@ -829,10 +826,6 @@ model<R>::model(int argc, char *argv[])
 			hout << "\t\t" << priv.get_opt_names()[i] << endl;
 		}
 		hout << "\t\t(some options may not take a value)" << endl;
-#endif
-
-#ifdef USE_LD
-		hout << "\t--long: Run using long-double (extended) precision (this must be the *last* command-line option argument)" << endl;
 #endif
 
 		hout << "\t@<file name>: The name of a parameters file" << endl;
@@ -1421,6 +1414,3 @@ void model<R>::write_info_file()
 
 // Explicit instantiations
 template class model<double>;
-#ifdef USE_LD
-template class model<long double>;
-#endif

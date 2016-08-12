@@ -101,6 +101,3 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 
 // Explicit instantiations
 template class v_integrator<double>;
-#ifdef USE_LD
-template class v_integrator<long double>;
-#endif

@@ -103,6 +103,3 @@ void slice_outputter<R>::accumulate(R phi, R chi, R phidot, R chidot, R phigradx
 
 // Explicit instantiations
 template class slice_outputter<double>;
-#ifdef USE_LD
-template class slice_outputter<long double>;
-#endif

@@ -408,6 +408,3 @@ R grid_funcs<R>::compute_p(field_size &fs, model_params<R> &mp, time_state<R> &t
 
 // Explicit instantiations
 template struct grid_funcs<double>;
-#ifdef USE_LD
-template struct grid_funcs<long double>;
-#endif

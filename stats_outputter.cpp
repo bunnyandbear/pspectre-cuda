@@ -197,6 +197,3 @@ void stats_outputter<R>::output()
 
 // Explicit instantiations
 template class stats_outputter<double>;
-#ifdef USE_LD
-template class stats_outputter<long double>;
-#endif

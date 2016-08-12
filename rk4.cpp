@@ -249,6 +249,3 @@ void rk4<R>::substep(R fac, field<R> &phip, field<R> &chip, field<R> &phidotp, f
 
 // Explicit instantiations
 template class rk4<double>;
-#ifdef USE_LD
-template class rk4<long double>;
-#endif

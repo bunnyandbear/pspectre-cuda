@@ -109,6 +109,3 @@ void gpot_computer<R>::compute(field_state final_state, bool grad_computed)
 
 // Explicit instantiations
 template class gpot_computer<double>;
-#ifdef USE_LD
-template class gpot_computer<long double>;
-#endif
