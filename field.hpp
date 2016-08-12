@@ -41,8 +41,6 @@ enum field_state
 	uninitialized,
 	position,
 	momentum,
-	padded_position,
-	padded_momentum
 };
 
 /** 
@@ -63,7 +61,7 @@ public:
 	}
 	
 	field(const char *name_ = 0)
-		: data(0), ldl(0), pldl(0), mdata(0), state(uninitialized), mdata_saved(0), name(name_) {};
+		: data(0), ldl(0), mdata(0), state(uninitialized), mdata_saved(0), name(name_) {};
 
 	~field();
 
@@ -78,17 +76,11 @@ public:
 		return (data == ((R *) mdata));
 	}
 
-protected:
-	void pad_momentum_grid();
-	void unpad_momentum_grid();
-
 public:
 	field_size fs;
 
 	/** 
 	 * @brief The position-space data.
-	 *
-	 * @note The inner (z) dimension is padded to a size of 2*(fs.n/2+1).
 	 */
 
 	R *data;
@@ -98,12 +90,6 @@ public:
 	 */
 
 	int ldl;
-
-	/**
-	 * @brief The length of the last dimension of the padded data array.
-	 */
-
-	int pldl;
 
 	/** 
 	 * @brief The momentum-space data.
@@ -115,8 +101,6 @@ protected:
 	field_state state;
 	fft_dft_r2c_3d_plan<R> p2m_plan;
 	fft_dft_c2r_3d_plan<R> m2p_plan;
-	fft_dft_r2c_3d_plan<R> padded_p2m_plan;
-	fft_dft_c2r_3d_plan<R> padded_m2p_plan;
 	typename fft_dft_c2r_3d_plan<R>::complex_t *mdata_saved;
 
 public:

@@ -108,7 +108,7 @@ void model<R>::set_output_directory(const char *uodn)
  * SpectRE Usage:
  * @code
  * ./pspectre [-h]
- * ./pspectre [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-P <int>] [-L <real>] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
+ * ./pspectre [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-L <real>] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
  * @endcode
  *
  * @li -h: Display usage information and exit
@@ -124,7 +124,6 @@ void model<R>::set_output_directory(const char *uodn)
  * @endcode
  * @li -O: Use out-of-place transforms
  * @li -N \<int\>: The number of grid points per side of the box
- * @li -P \<int\>: (REMOVED) The padding factor used for position-space integration
  * @li -L \<real\>: The physical size of the box
  * @li -R \<int\>: The random seed
  * @li -o \<dir name\>: Set the output directory name
@@ -150,14 +149,9 @@ void model<R>::set_output_directory(const char *uodn)
  *	monodromy_scale_phi
  *	monodromy_scale_chi
  *	H0
- *	phi0_slice
- *	chi0_slice
- *	phidot0_slice
- *	chidot0_slice
  *	ics_eff_size
  *	(a0 can be specified when H0 is specified by appending :\<a0\> to the H0 value;
  *	 Hdot0 can be similarly appended for use with power-law background expansion)
- *	(file paths provided for *_slice parameters cannot contain comma characters)
  *	(ics_eff_size is an integer <= N)
  * @endcode
  * @li -s \<name\>[,\<name\>]*: Enable slice output of a variable. Valid variables are:
@@ -240,10 +234,10 @@ void model<R>::set_output_directory(const char *uodn)
  *
  * The following runs the model with the default parameters and has binary slice outputs for the energy density, pressure
  * and gravitational potential. The slices to have a length of 32 points per side and were constructed by averaging (not skipping)
- * over every eight-point cube (since the dimension is 3). -P 2 causes the integration over the potential energy to use a (2N)^3 grid.
+ * over every eight-point cube (since the dimension is 3).
  *
  * @code
- * ./pspectre -P 2 -s rho,p,gpot -S dim=3,length=32,skip=1,avg
+ * ./pspectre -s rho,p,gpot -S dim=3,length=32,skip=1,avg
  * @endcode
  */
 
@@ -275,8 +269,7 @@ model<R>::model(int argc, char *argv[])
 		"phi0", "chi0", "phidot0", "chidot0",
 		"ics_scale", "monodromy_exp_phi", "monodromy_exp_chi",
 		"monodromy_scale_phi", "monodromy_scale_chi",
-		"H0", "phi0_slice", "chi0_slice",
-		"phidot0_slice", "chidot0_slice", "ics_eff_size", 0
+		"H0", "ics_eff_size", 0
 	};
 
 	const char *interval_names[] = {
@@ -386,8 +379,7 @@ model<R>::model(int argc, char *argv[])
 			fs.n = atoi(optarg);
 			break;
 		case 'P':
-			fs.n_pad_factor = atoi(optarg);
-			if (fs.n_pad_factor != 1) {
+			if (atoi(optarg) != 1) {
 				std::cerr << "Support for padding != 1 has been removed."
 					  << std::endl;
 				exit(1);
@@ -476,18 +468,6 @@ model<R>::model(int argc, char *argv[])
 					ts.adot = H0 * ts.a;
 					ts.addot = Hdot0 * ts.a;
 					external_H0 = true;
-				}
-				else if (!strcmp(param_names[index], "phi0_slice")) {
-					phi0_slice = std::string(value);
-				}
-				else if (!strcmp(param_names[index], "chi0_slice")) {
-					chi0_slice = std::string(value);
-				}
-				else if (!strcmp(param_names[index], "phidot0_slice")) {
-					phidot0_slice = std::string(value);
-				}
-				else if (!strcmp(param_names[index], "chidot0_slice")) {
-					chidot0_slice = std::string(value);
 				}
 				else if (!strcmp(param_names[index], "ics_eff_size")) {
 					ics_eff_size = atoi(value);
@@ -741,7 +721,7 @@ model<R>::model(int argc, char *argv[])
 		
 		hout << "SpectRE Usage:" << endl;
 		hout << argv[0] << " [-h]" << endl;
-		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-P <int>] [-L <real>] [-R <int>] "
+		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-O] [-N <int>] [-L <real>] [-R <int>] "
 			"[-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] "
 			"[-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] "
 			"[-I <name>=<value>[,<name>=<value>]*] "
@@ -764,7 +744,6 @@ model<R>::model(int argc, char *argv[])
 
 		hout << "\t-O: Use out-of-place transforms" << endl;
 		hout << "\t-N <int>: The number of grid points per side of the box" << endl;
-		hout << "\t-P <int>: (REMOVED) The padding factor used for position-space integration." << endl;
 		hout << "\t-L <real>: The physical size of the box" << endl;
 		hout << "\t-R <int>: The random seed" << endl;
 		hout << "\t-o <dir name>: Set the output directory name" << endl;
@@ -778,7 +757,6 @@ model<R>::model(int argc, char *argv[])
 		}
 		hout << "\t\t(a0 can be specified when H0 is specified by appending :<a0> to the H0 value" << endl;
 		hout << "\t\t Hdot0 can be similarly appended for use with power-law background expansion)" << endl;
-		hout << "\t\t(file paths provided for *_slice parameters cannot contain comma characters)" << endl;
 		hout << "\t\t(ics_eff_size is an integer <= N)" << endl;
 
 		hout << "\t-s <name>[,<name>]*: Enable slice output of a variable. Valid variables are:" << endl;
@@ -1018,11 +996,6 @@ void model<R>::set_initial_conditions()
 	chidot.mdata[0][0] = fs.total_gridpoints * chidot0pr;
 	chidot.mdata[0][1] = 0.;
 
-	load_initial_slice_file(phi0_slice, phi, pow(ts.a, mp.rescale_r)*mp.rescale_A);
-	load_initial_slice_file(chi0_slice, chi, pow(ts.a, mp.rescale_r)*mp.rescale_A);
-	load_initial_slice_file(phidot0_slice, phidot, pow(ts.a, mp.rescale_r - mp.rescale_s)*mp.rescale_A);
-	load_initial_slice_file(chidot0_slice, chidot, pow(ts.a, mp.rescale_r - mp.rescale_s)*mp.rescale_A);
-
 	if (ics_eff_size > 0) {
 		phi.switch_state(momentum);
 		chi.switch_state(momentum);
@@ -1055,86 +1028,6 @@ void model<R>::set_initial_conditions()
 						phidot.mdata[idx][0] = phidot.mdata[idx][1] = R(0);
 						chidot.mdata[idx][0] = chidot.mdata[idx][1] = R(0);
 					}
-				}
-			}
-		}
-	}
-}
-
-template <typename R>
-void model<R>::load_initial_slice_file(std::string &ifn, field<R> &fld, R pf)
-{
-	using namespace std;
-
-	if (!ifn.empty()) {
-		cout << "Replacing " << fld.name << " field data with slice: " << ifn << endl;
-		ifstream ifs((start_wd + "/" + ifn).c_str(), ios::in | ios::binary);
-		if (!ifs) {
-			cout << "ERROR: unable to open " << ifn << endl;
-		}
-		else {
-			ifs.seekg(0, ios::end);
-			std::size_t sz = ifs.tellg();
-			ifs.seekg(0);
-
-			if (sz == fld.fs.total_gridpoints*sizeof(R)) {
-				fld.switch_state(position);
-				ifs.read((char *) fld.data, sz);
-				cout << "\tread " << sz << " bytes into the position-space grid" << endl;
-				fld.divby(1./pf);
-			}
-			else if (sz == fld.fs.total_padded_gridpoints*sizeof(R)) {
-				fld.switch_state(padded_position);
-				ifs.read((char *) fld.data, sz);
-				cout << "\tread " << sz << " bytes into the padded position-space grid" << endl;
-				fld.divby(1./pf);
-			}
-			else if (sz < fld.fs.total_gridpoints*sizeof(R)) {
-				// Need to interpolate up to the current size...
-				int p = 1;
-				for (; p < fld.fs.n; ++p) {
-					if (sz == fld.fs.total_gridpoints*sizeof(R)/pow<3>(p)) {
-						field_size fs(fld.fs.n/p, p);
-						field<R> ifld(fs);
-
-						fld.switch_state(position);
-						ifld.switch_state(position);
-						ifs.read((char *) ifld.data, sz);
-						ifld.switch_state(padded_position);
-						std::copy(ifld.data, ifld.data + fld.fs.total_gridpoints, fld.data);
-
-						cout << "\tread " << sz << " bytes, interpolating up by a factor of " << p << endl;
-						fld.divby(1./pf);
-
-						break;
-					}
-				}
-				if (p == fld.fs.n) {
-					cout << "ERROR: no padding factor found for file size: " << sz << endl;
-				}
-			}
-			else {
-				// Need to interpolate down to the current size...
-				int p = 1;
-				for (; p < fld.fs.n; ++p) {
-					if (sz == fld.fs.total_gridpoints*sizeof(R)*pow<3>(p)) {
-						field_size fs(fld.fs.n/p, p);
-						field<R> ifld(fs);
-
-						fld.switch_state(position);
-						ifld.switch_state(padded_position);
-						ifs.read((char *) ifld.data, sz);
-						ifld.switch_state(position);
-						std::copy(ifld.data, ifld.data + fld.fs.total_gridpoints, fld.data);
-
-						cout << "\tread " << sz << " bytes, interpolating down by a factor of " << p << endl;
-						fld.divby(1./pf);
-
-						break;
-					}
-				}
-				if (p == fld.fs.n) {
-					cout << "ERROR: no padding factor found for file size: " << sz << endl;
 				}
 			}
 		}
@@ -1354,7 +1247,7 @@ void model<R>::write_info_file()
 #endif
 		<< endl;
 
-	info_file << "N pad factor: " << fs.n_pad_factor << endl;
+	info_file << "N pad factor: " << 1 << endl;
 	info_file << "random seed: " << seed << endl;
 	
 	info_file << endl;

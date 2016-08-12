@@ -38,9 +38,9 @@ v_integrator<R>::v_integrator(field_size &fs_, model_params<R> &mp_)
 	: fs(fs_), mp(mp_)
 {
 #ifdef _OPENMP
-	int sz = fs.n_pad_factor*fs.n*omp_get_max_threads();
+	int sz = fs.n*omp_get_max_threads();
 #else
-	int sz = fs.n_pad_factor*fs.n;
+	int sz = fs.n;
 #endif
 
 	y_integral = new R[sz];
@@ -61,42 +61,38 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 {
 	R total_V = 0.0;
 
-	phi.switch_state(padded_position, true);
-	chi.switch_state(padded_position, true);
+	phi.switch_state(position, true);
+	chi.switch_state(position, true);
 	
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:total_V)
 #endif
 
-	for (int x = 0; x < fs.n_pad_factor*fs.n; ++x) {
+	for (int x = 0; x < fs.n; ++x) {
 #ifdef _OPENMP
-		int tsi = fs.n_pad_factor*fs.n*omp_get_thread_num();
+		int tsi = fs.n*omp_get_thread_num();
 #else
 		int tsi = 0;
 #endif
 
 		y_integral[tsi+x] = 0.0;
 
-		for (int y = 0; y < fs.n_pad_factor*fs.n; ++y) {
-			
+		for (int y = 0; y < fs.n; ++y) {
 			z_integral[tsi+y] = 0.0;
-			
-			for (int z = 0; z < fs.n_pad_factor*fs.n; ++z) {
-				int idx = z + phi.pldl*(y + fs.n_pad_factor*fs.n*x);				
-
+			for (int z = 0; z < fs.n; ++z) {
+				int idx = z + phi.ldl*(y + fs.n*x);
 				z_integral[tsi+y] += (2 + 2*(z % 2))*mp.V(
 					phi.data[idx], chi.data[idx], a_t
 				);
 			}
-			
 			y_integral[tsi+x] += (2 + 2*(y % 2))*z_integral[tsi+y];
 		}
-		
+
 		total_V += (2 + 2*(x % 2))*y_integral[tsi+x];
 	}
 
 	// The normalizing factor for Simpson's rule iterated over 3 dimensions.
-	return (total_V * 1./(3.*3.*3.)) / fs.total_padded_gridpoints;
+	return (total_V * 1./(3.*3.*3.)) / fs.total_gridpoints;
 }
 
 // Explicit instantiations

@@ -41,10 +41,9 @@ void field<R>::construct(field_size &fs_, bool oop)
 {
 	fs = fs_;
 	ldl = oop ? fs.n : 2*(fs.n/2+1);
-	pldl = oop ? fs.n_pad_factor*fs.n : 2*((fs.n_pad_factor*fs.n)/2+1);
 
-	size_t alloc_size = sizeof(R) * fs.total_padded_gridpoints;
-	size_t c_alloc_size = 2*sizeof(R) * fs.total_padded_momentum_gridpoints;
+	size_t alloc_size = sizeof(R) * fs.total_gridpoints;
+	size_t c_alloc_size = 2*sizeof(R) * fs.total_momentum_gridpoints;
 
 	mdata = (typename fft_dft_c2r_3d_plan<R>::complex_t *) fft_malloc<R>(c_alloc_size);
 	data = oop ? fft_malloc<R>(alloc_size) : (R *) mdata;
@@ -54,11 +53,6 @@ void field<R>::construct(field_size &fs_, bool oop)
 
 	m2p_plan.construct(fs.n, fs.n, fs.n, mdata_saved ? mdata_saved : mdata, data, false);		
 	p2m_plan.construct(fs.n, fs.n, fs.n, data, mdata, false);
-
-	padded_m2p_plan.construct(fs.n_pad_factor*fs.n, fs.n_pad_factor*fs.n, fs.n_pad_factor*fs.n,
-		mdata_saved ? mdata_saved : mdata, data, false);		
-	padded_p2m_plan.construct(fs.n_pad_factor*fs.n, fs.n_pad_factor*fs.n, fs.n_pad_factor*fs.n,
-		data, mdata, false);
 
 	if (oop) memset(data, 0, alloc_size);
 	memset(mdata, 0, c_alloc_size);
@@ -101,29 +95,6 @@ void field<R>::divby(R v)
 			data[idx] /= v;
 		}
 	}
-	else if (state == padded_momentum) {
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-
-		for (int idx = 0; idx < fs.total_padded_momentum_gridpoints; ++idx) {
-			mdata[idx][0] /= v;
-			mdata[idx][1] /= v;
-		}		
-	}
-	else if (state == padded_position) {
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-		for (int x = 0; x < fs.n_pad_factor*fs.n; ++x)
-		for (int y = 0; y < fs.n_pad_factor*fs.n; ++y)
-		for (int z = 0; z < fs.n_pad_factor*fs.n; ++z) {
-			int idx = z + pldl*(y + fs.n_pad_factor*fs.n*x);
-			data[idx] /= v;
-		}
-	}
 }
 
 template <typename R>
@@ -142,70 +113,18 @@ void field<R>::switch_state(field_state state_, bool mmo)
 	else if (state_ == state) {
 		return;
 	}
-	else if (fs.n_pad_factor == 1 && (
-		(state_ == padded_position && state == position) ||
-		(state_ == position && state == padded_position) ||
-		(state_ == padded_momentum && state == momentum) ||
-		(state_ == momentum && state == padded_momentum))) {
-		state = state_;
-	}
 
-	if (state == position) {
+	if ((state == position) && (state_ == momentum)) {
 		state = momentum;
 		if (do_p2m) p2m_plan.execute();
 	}
-	else if (state == padded_position) {
-		state = padded_momentum;
-		if (do_p2m) padded_p2m_plan.execute();
+
+	if ((state == momentum) && (state_ == position)) {
+		state = position;
+		if (mdata_saved) memcpy(mdata_saved, mdata, 2*sizeof(R)*fs.total_momentum_gridpoints);
+		m2p_plan.execute();
+		divby(fs.total_gridpoints);
 	}
-
-switch_momentum_states:			
-	if (state == momentum) {	
-		if (state_ == padded_momentum || state_ == padded_position) {
-			state = padded_momentum;
-			pad_momentum_grid();
-		}
-		else if (state_ == position) {
-			state = position;
-			if (mdata_saved) memcpy(mdata_saved, mdata, 2*sizeof(R)*fs.total_momentum_gridpoints);
-			m2p_plan.execute();
-			divby(fs.total_gridpoints);
-		}
-	}
-
-	if (state == padded_momentum) {
-		if (state_ == momentum || state_ == position) {
-			state = momentum;
-			unpad_momentum_grid();
-			
-			if (state_ == position) {
-				goto switch_momentum_states;
-			}
-		}
-		else if (state_ == padded_position) {
-			state = padded_position;
-			if (mdata_saved) memcpy(mdata_saved, mdata, 2*sizeof(R)*fs.total_padded_momentum_gridpoints);
-			padded_m2p_plan.execute();
-			divby(fs.total_padded_gridpoints);
-		}
-	}
-}
-
-/*
- * The momentum-grid can be padded in place: The process works backwards.
- * CHANG: Support for padding has been removed in CUDA porting.
- */
-
-template <typename R>
-void field<R>::pad_momentum_grid()
-{
-	return;
-}
-
-template <typename R>
-void field<R>::unpad_momentum_grid()
-{
-	return;
 }
 
 // Explicit instantiations

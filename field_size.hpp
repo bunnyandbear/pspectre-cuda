@@ -35,8 +35,8 @@
 
 struct field_size
 {
-	field_size(int n_ = 0, int n_pad_factor_ = 1)
-		: n(n_), n_pad_factor(n_pad_factor_)
+	field_size(int n_ = 0)
+		: n(n_)
 	{
 		calculate_size_totals();
 	}
@@ -46,17 +46,13 @@ struct field_size
 		using namespace std;
 		
 		total_gridpoints = n*n*n;
-		total_padded_gridpoints = total_gridpoints*n_pad_factor*n_pad_factor*n_pad_factor;
-		
 		total_momentum_gridpoints = n*n*(n/2+1);
-		total_padded_momentum_gridpoints = n_pad_factor*n*n_pad_factor*n*((n_pad_factor*n)/2+1);
 		
 		power_length = int(sqrt(3)*0.5*n) + 1;
 	}
 
-	int n, n_pad_factor;
-	int total_gridpoints, total_padded_gridpoints;
-	int total_momentum_gridpoints, total_padded_momentum_gridpoints;
+	int n;
+	int total_gridpoints, total_momentum_gridpoints;
 	int power_length; // Length of a power spectrum array.
 };
 
