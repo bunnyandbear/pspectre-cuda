@@ -31,7 +31,7 @@
 #ifndef GRID_FUNCS_HPP
 #define GRID_FUNCS_HPP
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "model_params.hpp"
 #include "field_size.hpp"
 #include "time_state.hpp"

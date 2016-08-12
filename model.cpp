@@ -25,7 +25,7 @@
 
 #define _XOPEN_SOURCE 600
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "model.hpp"
 #include "integrator.hpp"
 #include "verlet.hpp"

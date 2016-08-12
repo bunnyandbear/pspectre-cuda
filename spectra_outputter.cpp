@@ -23,7 +23,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "spectra_outputter.hpp"
 
 #include <sstream>

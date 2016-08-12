@@ -31,7 +31,7 @@
 #ifndef MODEL_PARAMS
 #define MODEL_PARAMS
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 
 #include <iostream>
 #include <string>

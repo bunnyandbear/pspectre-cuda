@@ -25,7 +25,7 @@
 
 #define _XOPEN_SOURCE 600
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "fft.hpp"
 #include "defrost_style_initializer.hpp"
 

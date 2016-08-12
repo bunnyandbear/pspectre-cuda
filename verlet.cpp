@@ -23,7 +23,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "verlet.hpp"
 
 using namespace std;

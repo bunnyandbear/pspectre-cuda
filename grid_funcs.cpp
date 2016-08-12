@@ -23,7 +23,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pow/pow.hpp"
+#include "pow.hpp"
 #include "grid_funcs.hpp"
 
 using namespace std;
