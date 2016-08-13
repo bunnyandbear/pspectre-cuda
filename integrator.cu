@@ -25,19 +25,13 @@
 
 #include "pow.hpp"
 #include "integrator.hpp"
+#include "reduction_helper.hpp"
+
+#include <cufftw.h>
 
 using namespace std;
 
-template <typename R>
-void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
-	field<R> &phi, field<R> &chi,
-	R &avg_gradient_phi, R &avg_gradient_chi)
-{
-	phi.switch_state(momentum);
-	chi.switch_state(momentum);
-
-	R total_gradient_phi = 0.0, total_gradient_chi = 0.0;
-
+/*
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:total_gradient_phi,total_gradient_chi)
 #endif
@@ -58,6 +52,46 @@ void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
 			}
 		}
 	}
+*/
+
+#define pow2(p) ((p)*(p))
+__global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
+				  double *total_gradient_phi, double *total_gradient_chi,
+				  int n, double dp)
+{
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int px = (x <= n/2 ? x : x - n);
+	int py = (y <= n/2 ? y : y - n);
+	int pz = z;
+	int idx = z + (n/2+1)*(y + n*x);
+
+	double mom2 = pow2(dp)*(pow2(px) + pow2(py) + pow2(pz));
+	mom2 *= (z == 0 || z == n/2) ? 1 : 2;
+				
+	total_gradient_phi[idx] += mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
+	total_gradient_chi[idx] += mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
+}
+
+template <typename R>
+void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
+	field<R> &phi, field<R> &chi,
+	R &avg_gradient_phi, R &avg_gradient_chi)
+{
+	phi.switch_state(momentum);
+	chi.switch_state(momentum);
+
+	auto total_gradient_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto total_gradient_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	dim3 num_blocks(fs.n, fs.n);
+	dim3 num_threads(fs.n/2+1, 1);
+	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata, chi.mdata,
+				  total_gradient_phi_arr.array, total_gradient_chi_arr.array,
+				  fs.n, mp.dp);
+
+	R total_gradient_phi = total_gradient_phi_arr.sum();
+	R total_gradient_chi = total_gradient_chi_arr.sum();
 
 	// Divide by total_gridpoints again to get *average* squared gradient and *average* potential energy.
 	avg_gradient_phi = total_gradient_phi/pow<2, R>(fs.total_gridpoints);
