@@ -69,7 +69,7 @@ __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 
 	double mom2 = pow2(dp)*(pow2(px) + pow2(py) + pow2(pz));
 	mom2 *= (z == 0 || z == n/2) ? 1 : 2;
-				
+
 	total_gradient_phi[idx] += mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
 	total_gradient_chi[idx] += mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
 }
