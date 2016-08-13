@@ -1,6 +1,8 @@
-if [[ $(which module) ]]; then
-    module load GCC/5.1.0
+if [[ $(uname -n | grep build-sb) ]]; then
+    module load GCC/4.9.2
     module load CUDA/7.5.18
+else
+    echo "Make sure you have CUDA toolchain installed."
 fi
 
 nvcc -std=c++11 -O2 *.cpp *.cu -lcufft -lcufftw
