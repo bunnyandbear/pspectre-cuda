@@ -1,11 +1,17 @@
 #include <stdio.h>
 
-void print_device_info()
+void print_cuda_info()
 {
-	int nDevices;
+	int nr_dev = 0;
 
-	cudaGetDeviceCount(&nDevices);
-	for (int i = 0; i < nDevices; i++) {
+	cudaGetDeviceCount(&nr_dev);
+	if (nr_dev <= 0) {
+		printf("==========================\n");
+		printf("WARNING! WARNING! WARNING!\n");
+		printf("No CUDA device found.\n");
+		printf("==========================\n");
+	}
+	for (int i = 0; i < nr_dev; i++) {
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, i);
 		printf("Device Number: %d\n", i);

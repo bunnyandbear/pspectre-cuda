@@ -91,6 +91,8 @@
 
 using namespace std;
 
+void print_cuda_info();
+
 int main(int argc, char *argv[])
 {
 #if defined(FE_NOMASK_ENV) && !defined(__INTEL_COMPILER)
@@ -100,12 +102,7 @@ int main(int argc, char *argv[])
 	_MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~(_MM_MASK_OVERFLOW|_MM_MASK_INVALID|_MM_MASK_DIV_ZERO));
 #endif
 
-#ifdef _OPENMP
-	fftw_init_threads(); //Initialization to use threads for FFTW
-	fftw_plan_with_nthreads(omp_get_max_threads());
-
-	cout << "Initialized FFT library with " << omp_get_max_threads() << " threads." << endl;
-#endif
+	print_cuda_info();
 
 	vector<char *> args(argv, argv + argc);
 	bool first_line = true;

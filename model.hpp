@@ -84,8 +84,6 @@ protected:
 	bool vvwl;
 	R af;
 	bool external_H0;
-	std::string phi0_slice, chi0_slice;
-	std::string phidot0_slice, chidot0_slice;
 	std::string start_wd;
 	int ics_eff_size;
 	R phidot0pr, chidot0pr;
