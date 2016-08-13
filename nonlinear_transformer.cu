@@ -27,6 +27,68 @@
 
 using namespace std;
 
+/* x  *  y  *  z
+ * n  *  n  *  2*(n/2+1)
+ * BLK(x,y) *  THR(x,1)
+ */
+#define pow2(p) ((p)*(p))
+#define pow3(p) ((p)*(p)*(p))
+#define pow5(p) ((p)*(p)*(p)*(p)*(p))
+__global__ void nonlin_trans_kernel(double *phi, double *chi,
+				    double *phi2chi, double *chi2phi,
+				    double *phi_md, double *chi_md,
+				    double *phi3, double *chi3,
+				    double *phi5, double *chi5,
+				    double lambda_phi, double lambda_chi,
+				    double gamma_phi, double gamma_chi,
+				    double md_e_phi, double md_c_phi,
+				    double md_e_chi, double md_c_chi,
+				    double md_s_phi, double md_s_chi,
+				    double a_t, double rescale_A, double rescale_r,
+				    int n, int ldl)
+{
+ 	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int fdx = z + ldl*(y + n*x);
+	int idx = z + ldl*(y + n*x);
+	double p = phi[fdx];
+	double c = chi[fdx];
+				
+	phi2chi[idx] = pow2(p)*c;
+	chi2phi[idx] = pow2(c)*p;
+				
+	if (lambda_phi != 0.0) {
+		phi3[idx] = pow3(p);
+	}
+
+	if (lambda_chi != 0.0) {
+		chi3[idx] = pow3(c);
+	}
+
+	if (gamma_phi != 0.0) {
+		phi5[idx] = pow5(p);
+	}
+
+	if (gamma_chi != 0.0) {
+		chi5[idx] = pow5(c);
+	}
+
+	if (md_e_phi != 0.0) {
+		phi_md[idx] = 2.0 * md_c_phi * md_e_phi * p *
+			pow(1.0 +
+			    pow(a_t, -2. * rescale_r) * pow2(p/rescale_A) / pow2(md_s_phi),
+			    md_e_phi - 1.0);
+	}
+
+	if (md_e_chi != 0.0) {
+		chi_md[idx] = 2.0 * md_c_chi * md_e_chi * p *
+			pow(1.0 +
+			    pow(a_t, -2. * rescale_r) * pow2(p/rescale_A) / pow2(md_s_chi),
+			    md_e_chi - 1.0);
+	}
+}
+
 template <typename R>
 void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, field_state final_state)
 {
@@ -69,51 +131,21 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 		chi_md.switch_state(position);
 	}
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
+	dim3 nr_blocks(fs.n, fs.n);
+	dim3 nr_threads(fs.n, 1);
+	nonlin_trans_kernel<<<nr_blocks, nr_threads>>>(phi.data, chi.data,
+						       phi2chi.data, chi2phi.data,
+						       phi_md.data, chi_md.data,
+						       phi3.data, chi3.data,
+						       phi5.data, chi5.data,
+						       mp.lambda_phi, mp.lambda_chi,
+						       mp.gamma_phi, mp.gamma_chi,
+						       mp.md_e_phi, mp.md_c_phi,
+						       mp.md_e_chi, mp.md_c_chi,
+						       mp.md_s_phi, mp.md_s_chi,
+						       a_t, mp.rescale_A, mp.rescale_r,
+						       fs.n, phi.ldl);
 
-	for (int x = 0; x < fs.n; ++x) {
-		for (int y = 0; y < fs.n; ++y) {
-			for (int z = 0; z < fs.n; ++z) {
-				int fdx = z + phi.ldl*(y + fs.n*x);
-				int idx = z + phi2chi.ldl*(y + fs.n*x);
-
-				R p = phi.data[fdx];
-				R c = chi.data[fdx];
-				
-				phi2chi.data[idx] = pow<2>(p)*c;
-				chi2phi.data[idx] = pow<2>(c)*p;
-				
-				if (mp.lambda_phi != 0.0) {
-					phi3.data[idx] = pow<3>(p);
-				}
-
-				if (mp.lambda_chi != 0.0) {
-					chi3.data[idx] = pow<3>(c);
-				}
-
-				if (mp.gamma_phi != 0.0) {
-					phi5.data[idx] = pow<5>(p);
-				}
-
-				if (mp.gamma_chi != 0.0) {
-					chi5.data[idx] = pow<5>(c);
-				}
-
-				if (mp.md_e_phi != 0.0) {
-					phi_md.data[idx] = 2.0*mp.md_c_phi*mp.md_e_phi*p *
-						pow(1.0 + pow(a_t, -2. * mp.rescale_r)*pow<2>(p/mp.rescale_A)/pow<2>(mp.md_s_phi), mp.md_e_phi - 1.0);
-				}
-
-				if (mp.md_e_chi != 0.0) {
-					chi_md.data[idx] = 2.0*mp.md_c_chi*mp.md_e_chi*p *
-						pow(1.0 + pow(a_t, -2. * mp.rescale_r)*pow<2>(p/mp.rescale_A)/pow<2>(mp.md_s_chi), mp.md_e_chi - 1.0);
-				}
-			}
-		}
-	}
-	
 	phi2chi.switch_state(final_state);
 	chi2phi.switch_state(final_state);
 	

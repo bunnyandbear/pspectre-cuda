@@ -57,16 +57,6 @@ field<R>::~field()
 	fft_free<R>(data);
 }
 
-/*
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-for (int idx = 0; idx < fs.total_momentum_gridpoints; ++idx) {
-	mdata[idx][0] /= v;
-	mdata[idx][1] /= v;
-}
-*/
-
 /* (x*y) * (z)
  * (n^2) * (n/2+1)
  * BLK     THR
@@ -78,18 +68,6 @@ __global__ void momentum_divby_kernel(fftw_complex *mdata, double v)
 	mdata[idx][0] /= v;
 	mdata[idx][1] /= v;
 }
-
-/*
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-for (int x = 0; x < fs.n; ++x)
-for (int y = 0; y < fs.n; ++y)
-for (int z = 0; z < fs.n; ++z) {
-	int idx = z + ldl*(y + fs.n*x);
-	data[idx] /= v;
-}
-*/
 
 /* (x*y) * (z)
  * (n^2) * (2*(n/2+1))
