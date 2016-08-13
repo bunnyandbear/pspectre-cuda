@@ -47,17 +47,17 @@ __global__ void nonlin_trans_kernel(double *phi, double *chi,
 				    double a_t, double rescale_A, double rescale_r,
 				    int n, int ldl)
 {
- 	int x = blockIdx.x;
+	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
 	int fdx = z + ldl*(y + n*x);
 	int idx = z + ldl*(y + n*x);
 	double p = phi[fdx];
 	double c = chi[fdx];
-				
+
 	phi2chi[idx] = pow2(p)*c;
 	chi2phi[idx] = pow2(c)*p;
-				
+
 	if (lambda_phi != 0.0) {
 		phi3[idx] = pow3(p);
 	}
