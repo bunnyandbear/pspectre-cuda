@@ -23,8 +23,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _XOPEN_SOURCE 600
-
 #include "pow.hpp"
 #include "model.hpp"
 #include "integrator.hpp"
@@ -33,6 +31,8 @@
 #include "le_style_initializer.hpp"
 #include "grid_funcs.hpp"
 #include "energy_outputter.hpp"
+
+#include <cufftw.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -817,6 +817,21 @@ model<R>::~model()
 	delete som;
 }
 
+__global__ void field_init_kernel(fftw_complex *mdata, int n, int effpmax, int effpmin)
+{
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int px = x <= n/2 ? x : x - n;
+	int py = y <= n/2 ? y : y - n;
+	int pz = z;
+	int idx = z + (n/2+1) * (y + n*x);
+	if (px > effpmax || py > effpmax || pz > effpmax ||
+	    px < effpmin || py < effpmin || pz < effpmin) {
+		mdata[idx][0] = mdata[idx][1] = 0;
+	}
+}
+
 template <typename R>
 void model<R>::set_initial_conditions()
 {
@@ -948,29 +963,12 @@ void model<R>::set_initial_conditions()
 		int effpmax = ics_eff_size/2;
 		int effpmin = -effpmax+1;
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-
-		for (int x = 0; x < fs.n; ++x) {
-			int px = (x <= fs.n/2 ? x : x - fs.n);
-			for (int y = 0; y < fs.n; ++y) {
-				int py = (y <= fs.n/2 ? y : y - fs.n);
-				for (int z = 0; z < fs.n/2+1; ++z) {
-					int pz = z;
-					if (
-						px > effpmax || py > effpmax || pz > effpmax ||
-						px < effpmin || py < effpmin || pz < effpmin
-					) {
-						int idx = z + (fs.n/2+1)*(y + fs.n * x);
-						phi.mdata[idx][0] = phi.mdata[idx][1] = R(0);
-						chi.mdata[idx][0] = chi.mdata[idx][1] = R(0);
-						phidot.mdata[idx][0] = phidot.mdata[idx][1] = R(0);
-						chidot.mdata[idx][0] = chidot.mdata[idx][1] = R(0);
-					}
-				}
-			}
-		}
+		dim3 num_blocks(fs.n, fs.n);
+		dim3 num_threads(fs.n/2+1, 1);
+		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata, fs.n, effpmax, effpmin);
 	}
 }
 
@@ -1156,13 +1154,7 @@ void model<R>::write_info_file()
 	info_file << "effective-size cutoff: "; if (ics_eff_size > 0) info_file << ics_eff_size; else info_file << "none"; info_file << endl;
 	info_file << "vary field variance with L: " << (vvwl ? "yes" : "no") << endl;
 
-	info_file << "parallelize: " <<
-#ifdef _OPENMP
-		"yes (" << omp_get_max_threads() << " threads)"
-#else
-		"no"
-#endif
-		<< endl;
+	info_file << "parallelize: cuda" << endl;
 
 	info_file << "N pad factor: " << 1 << endl;
 	info_file << "random seed: " << seed << endl;
