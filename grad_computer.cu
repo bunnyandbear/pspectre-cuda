@@ -24,8 +24,45 @@
  */
 
 #include "grad_computer.hpp"
+#include <cufftw.h>
 
 using namespace std;
+
+__global__ void grad_computer_kernel(
+	fftw_complex *phi, fftw_complex *chi,
+	fftw_complex *phigradx, fftw_complex *chigradx,
+	fftw_complex *phigrady, fftw_complex *chigrady,
+	fftw_complex *phigradz, fftw_complex *chigradz,
+	int n, double dp)
+{
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int px = x <= n/2 ? x : x - n;
+	int py = y <= n/2 ? y : y - n;
+	int pz = z;
+	int idx = z + (n/2+1)*(y + n * x);
+
+	// The Fourier transform conventions require
+	// the normalization of the position-space values by 1/N^3.
+	phigradx[idx][0] = -1. * px * dp * phi[idx][1];
+	phigradx[idx][1] = px * dp * phi[idx][0];
+
+	chigradx[idx][0] = -1. * px * dp * chi[idx][1];
+	chigradx[idx][1] = px * dp * chi[idx][0];
+
+	phigrady[idx][0] = -1. * py * dp * phi[idx][1];
+	phigrady[idx][1] = py * dp * phi[idx][0];
+
+	chigrady[idx][0] = -1. * py * dp * chi[idx][1];
+	chigrady[idx][1] = py * dp * chi[idx][0];
+
+	phigradz[idx][0] = -1. * pz * dp * phi[idx][1];
+	phigradz[idx][1] = pz * dp * phi[idx][0];
+
+	chigradz[idx][0] = -1. * pz * dp * chi[idx][1];
+	chigradz[idx][1] = pz * dp * chi[idx][0];
+}
 
 template <typename R>
 void grad_computer<R>::compute(field_state final_state)
@@ -50,40 +87,15 @@ void grad_computer<R>::compute(field_state final_state)
 	
 	chigradz.switch_state(uninitialized);
 	chigradz.switch_state(momentum);
-	
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
 
-	for (int x = 0; x < fs.n; ++x) {
-		int px = (x <= fs.n/2 ? x : x - fs.n);
-		for (int y = 0; y < fs.n; ++y) {
-			int py = (y <= fs.n/2 ? y : y - fs.n);
-			for (int z = 0; z < fs.n/2+1; ++z) {
-				int pz = z;
-				int idx = z + (fs.n/2+1)*(y + fs.n * x);
-
-				// The Fourier transform conventions require the normalization of the position-space values by 1/N^3.
-				phigradx.mdata[idx][0] = -1. * px * mp.dp * phi.mdata[idx][1];
-				phigradx.mdata[idx][1] = px * mp.dp * phi.mdata[idx][0];
-
-				chigradx.mdata[idx][0] = -1. * px * mp.dp * chi.mdata[idx][1];
-				chigradx.mdata[idx][1] = px * mp.dp * chi.mdata[idx][0];
-
-				phigrady.mdata[idx][0] = -1. * py * mp.dp * phi.mdata[idx][1];
-				phigrady.mdata[idx][1] = py * mp.dp * phi.mdata[idx][0];
-
-				chigrady.mdata[idx][0] = -1. * py * mp.dp * chi.mdata[idx][1];
-				chigrady.mdata[idx][1] = py * mp.dp * chi.mdata[idx][0];
-
-				phigradz.mdata[idx][0] = -1. * pz * mp.dp * phi.mdata[idx][1];
-				phigradz.mdata[idx][1] = pz * mp.dp * phi.mdata[idx][0];
-
-				chigradz.mdata[idx][0] = -1. * pz * mp.dp * chi.mdata[idx][1];
-				chigradz.mdata[idx][1] = pz * mp.dp * chi.mdata[idx][0];
-			}
-		}
-	}
+	dim3 num_blocks(fs.n, fs.n);
+	dim3 num_threads(fs.n/2+1, 1);
+	grad_computer_kernel<<<num_blocks, num_threads>>>(
+		phi.mdata, chi.mdata,
+		phigradx.mdata, chigradx.mdata,
+		phigrady.mdata, chigrady.mdata,
+		phigradz.mdata, chigradz.mdata,
+		fs.n, mp.dp);
 
 	phigradx.switch_state(final_state);
 	chigradx.switch_state(final_state);
