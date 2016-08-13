@@ -23,8 +23,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _XOPEN_SOURCE 600
-
 #include "pow.hpp"
 #include "field.hpp"
 
@@ -59,31 +57,59 @@ field<R>::~field()
 	fft_free<R>(data);
 }
 
+/*
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+for (int idx = 0; idx < fs.total_momentum_gridpoints; ++idx) {
+	mdata[idx][0] /= v;
+	mdata[idx][1] /= v;
+}
+*/
+
+/* (x*y) * (z)
+ * (n^2) * (n/2+1)
+ * BLK     THR
+ *         NO-PADDING
+ */
+__global__ void momentum_divby_kernel(fftw_complex *mdata, double v)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	mdata[idx][0] /= v;
+	mdata[idx][1] /= v;
+}
+
+/*
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+for (int x = 0; x < fs.n; ++x)
+for (int y = 0; y < fs.n; ++y)
+for (int z = 0; z < fs.n; ++z) {
+	int idx = z + ldl*(y + fs.n*x);
+	data[idx] /= v;
+}
+*/
+
+/* (x*y) * (z)
+ * (n^2) * (2*(n/2+1))
+ * BLK     THR
+ *         PADDED from n to (2*(n/2+1))
+ */
+__global__ void position_divby_kernel(double *data, double v, int ldl)
+{
+	int idx = ldl * blockIdx.x + threadIdx.x;
+	data[idx] /= v;
+}
+
 template <typename R>
 void field<R>::divby(R v)
 {
+	int n = fs.n;
 	if (state == momentum) {
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-
-		for (int idx = 0; idx < fs.total_momentum_gridpoints; ++idx) {
-			mdata[idx][0] /= v;
-			mdata[idx][1] /= v;
-		}
-	}
-	else if (state == position) {
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-		for (int x = 0; x < fs.n; ++x)
-		for (int y = 0; y < fs.n; ++y)
-		for (int z = 0; z < fs.n; ++z) {
-			int idx = z + ldl*(y + fs.n*x);
-			data[idx] /= v;
-		}
+		momentum_divby_kernel<<<n*n, n/2+1>>>(mdata, v);
+	} else if (state == position) {
+		position_divby_kernel<<<n*n, n>>>(data, v, ldl);
 	}
 }
 
