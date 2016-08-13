@@ -5,4 +5,4 @@ else
     echo "Make sure you have CUDA toolchain installed."
 fi
 
-nvcc -std=c++11 -O2 *.cpp *.cu -lcufft -lcufftw
+nvcc -std=c++11 -O2 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp

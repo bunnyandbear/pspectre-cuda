@@ -104,6 +104,11 @@ int main(int argc, char *argv[])
 
 	print_cuda_info();
 
+#ifdef _OPENMP
+	cout << "Using " << omp_get_max_threads() << " CPU threads." << endl;
+	cout << "Note: when available, we will use both CPU and GPU to speed things up." << endl;
+#endif
+
 	vector<char *> args(argv, argv + argc);
 	bool first_line = true;
 	wordexp_t we;
