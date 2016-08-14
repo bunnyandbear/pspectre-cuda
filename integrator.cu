@@ -39,8 +39,8 @@ __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = (x <= n/2 ? x : x - n);
-	int py = (y <= n/2 ? y : y - n);
+	int px = x <= n/2 ? x : x - n;
+	int py = y <= n/2 ? y : y - n;
 	int pz = z;
 	int idx = z + (n/2+1)*(y + n*x);
 

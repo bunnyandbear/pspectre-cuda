@@ -24,6 +24,7 @@
  */
 
 #include "pow.hpp"
+#include "reduction_helper.hpp"
 #include "energy_outputter.hpp"
 #include "grid_funcs.hpp"
 
@@ -44,6 +45,56 @@ energy_outputter<R>::energy_outputter(field_size &fs_, model_params<R> &mp_, tim
 	of << setprecision(30) << scientific;
 }
 
+/*
+			}
+		}
+	}
+*/
+
+__global__ void energy_sum_kernel(fftw_complex *phi, fftw_complex *chi,
+				  fftw_complex *phidot, fftw_complex *chidot,
+				  double *avg_phi_squared, double *avg_chi_squared,
+				  double *avg_phidot_squared, double *avg_chidot_squared,
+				  double *avg_gradient_phi_x, double *avg_gradient_chi_x,
+				  double *avg_gradient_phi_y, double *avg_gradient_chi_y,
+				  double *avg_gradient_phi_z, double *avg_gradient_chi_z,
+				  double *avg_ffd_phi, double *avg_ffd_chi,
+				  int n, double dp)
+{
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int px = x <= n/2 ? x : x - n;
+	int py = y <= n/2 ? y : y - n;
+	int pz = z;
+	int idx = z + (n/2+1)*(y + n*x);
+
+	int cnt = (z == 0 || z == n/2) ? 1 : 2;
+
+	double phi_squared = pow2(phi[idx][0]) + pow2(phi[idx][1]);
+	double chi_squared = pow2(chi[idx][0]) + pow2(chi[idx][1]);
+	avg_phi_squared[idx] = cnt * phi_squared;
+	avg_chi_squared[idx] = cnt * chi_squared;
+				
+	avg_phidot_squared[idx] = cnt * (pow2(phidot[idx][0]) + pow2(phidot[idx][1]));
+	avg_chidot_squared[idx] = cnt * (pow2(chidot[idx][0]) + pow2(chidot[idx][1]));
+				
+	avg_ffd_phi[idx] = cnt * (phi[idx][0] * phidot[idx][0] +
+		phi[idx][1] * phidot[idx][1]);
+	avg_ffd_chi[idx] = cnt * (chi[idx][0] * chidot[idx][0] +
+		chi[idx][1] * chidot[idx][1]);
+				
+	double mom2x = pow2(dp) * pow2(px);
+	double mom2y = pow2(dp) * pow2(py);
+	double mom2z = pow2(dp) * pow2(pz);
+	avg_gradient_phi_x[idx] = cnt * mom2x * phi_squared;
+	avg_gradient_chi_x[idx] = cnt * mom2x * chi_squared;
+	avg_gradient_phi_y[idx] = cnt * mom2y * phi_squared;
+	avg_gradient_chi_y[idx] = cnt * mom2y * chi_squared;
+	avg_gradient_phi_z[idx] = cnt * mom2z * phi_squared;
+	avg_gradient_chi_z[idx] = cnt * mom2z * chi_squared;
+}
+
 template <typename R>
 void energy_outputter<R>::output(bool no_output)
 {
@@ -55,58 +106,44 @@ void energy_outputter<R>::output(bool no_output)
 	phidot.switch_state(momentum);
 	chidot.switch_state(momentum);
 	
-	R avg_phi_squared = 0.0, avg_chi_squared = 0.0,
-		avg_phidot_squared = 0.0, avg_chidot_squared = 0.0,
-		avg_gradient_phi_x = 0.0, avg_gradient_chi_x = 0.0,
-		avg_gradient_phi_y = 0.0, avg_gradient_chi_y = 0.0,
-		avg_gradient_phi_z = 0.0, avg_gradient_chi_z = 0.0,
-		avg_ffd_phi = 0.0, avg_ffd_chi = 0.0;
+	auto avg_phi_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_chi_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_phidot_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_chidot_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_phi_x_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_chi_x_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_phi_y_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_chi_y_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_phi_z_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_gradient_chi_z_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_ffd_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_ffd_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
 
-		int tc = 0;
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tc,avg_phi_squared,avg_chi_squared,avg_phidot_squared,avg_chidot_squared,avg_gradient_phi_x,avg_gradient_chi_x,avg_gradient_phi_y,avg_gradient_chi_y,avg_gradient_phi_z,avg_gradient_chi_z,avg_ffd_phi,avg_ffd_chi)
-#endif
+	dim3 num_blocks(fs.n, fs.n);
+	dim3 num_threads(fs.n/2+1, 1);
+	energy_sum_kernel<<<num_blocks, num_threads>>>(
+		phi.mdata.ptr, chi.mdata.ptr,
+		phidot.mdata.ptr, chidot.mdata.ptr,
+		avg_phi_squared_arr.ptr(), avg_chi_squared_arr.ptr(),
+		avg_phidot_squared_arr.ptr(), avg_chidot_squared_arr.ptr(),
+		avg_gradient_phi_x_arr.ptr(), avg_gradient_chi_x_arr.ptr(),
+		avg_gradient_phi_y_arr.ptr(), avg_gradient_chi_y_arr.ptr(),
+		avg_gradient_phi_z_arr.ptr(), avg_gradient_chi_z_arr.ptr(),
+		avg_ffd_phi_arr.ptr(), avg_ffd_chi_arr.ptr(),
+		fs.n, mp.dp);
 
-	for (int x = 0; x < fs.n; ++x) {
-		int px = (x <= fs.n/2 ? x : x - fs.n);
-		for (int y = 0; y < fs.n; ++y) {
-			int py = (y <= fs.n/2 ? y : y - fs.n);
-			for (int z = 0; z < fs.n/2+1; ++z) {
-				int pz = z;
-				int idx = z + (fs.n/2+1) * (y + fs.n * x);
-				int cnt = (z == 0 || z == fs.n/2) ? 1 : 2;
-
-				tc += cnt;
-				R phi_squared = pow2(phi.mdata[idx][0]) + pow2(phi.mdata[idx][1]);
-				R chi_squared = pow2(chi.mdata[idx][0]) + pow2(chi.mdata[idx][1]);
-				avg_phi_squared += cnt * phi_squared;
-				avg_chi_squared += cnt * chi_squared;
-				// cout << x << " " << y << " " << z << " " << idx << " " << phi_squared << " " << cnt * phi_squared << " " << avg_phi_squared << endl;
-				
-				avg_phidot_squared += cnt * (pow2(phidot.mdata[idx][0]) + pow2(phidot.mdata[idx][1]));
-				avg_chidot_squared += cnt * (pow2(chidot.mdata[idx][0]) + pow2(chidot.mdata[idx][1]));
-				
-				avg_ffd_phi += cnt * (
-					phi.mdata[idx][0] * phidot.mdata[idx][0] +
-					phi.mdata[idx][1] * phidot.mdata[idx][1]
-				);
-				avg_ffd_chi += cnt * (
-					chi.mdata[idx][0] * chidot.mdata[idx][0] +
-					chi.mdata[idx][1] * chidot.mdata[idx][1]
-				);
-				
-				R mom2x = pow2(mp.dp) * pow2(px);
-				R mom2y = pow2(mp.dp) * pow2(py);
-				R mom2z = pow2(mp.dp) * pow2(pz);
-				avg_gradient_phi_x += cnt * mom2x * phi_squared;
-				avg_gradient_chi_x += cnt * mom2x * chi_squared;
-				avg_gradient_phi_y += cnt * mom2y * phi_squared;
-				avg_gradient_chi_y += cnt * mom2y * chi_squared;
-				avg_gradient_phi_z += cnt * mom2z * phi_squared;
-				avg_gradient_chi_z += cnt * mom2z * chi_squared;
-			}
-		}
-	}
+	double avg_phi_squared = avg_phi_squared_arr.sum();
+	double avg_chi_squared = avg_chi_squared_arr.sum();
+	double avg_phidot_squared = avg_phidot_squared_arr.sum();
+	double avg_chidot_squared = avg_chidot_squared_arr.sum();
+	double avg_gradient_phi_x = avg_gradient_phi_x_arr.sum();
+	double avg_gradient_chi_x = avg_gradient_chi_x_arr.sum();
+	double avg_gradient_phi_y = avg_gradient_phi_y_arr.sum();
+	double avg_gradient_chi_y = avg_gradient_chi_y_arr.sum();
+	double avg_gradient_phi_z = avg_gradient_phi_z_arr.sum();
+	double avg_gradient_chi_z = avg_gradient_chi_z_arr.sum();
+	double avg_ffd_phi = avg_ffd_phi_arr.sum();
+	double avg_ffd_chi = avg_ffd_chi_arr.sum();
 
 	// The first factor of 1./N^3 comes from Parseval's theorem.
 	avg_phidot_squared /= 2*pow2(fs.total_gridpoints);
