@@ -7,6 +7,7 @@ struct double_array_gpu {
 	double_array_gpu(int dimx, int dimy, int dimz) {
 		n = dimx * dimy * dimz;
 		dev_ptr = thrust::device_malloc<double>(n);
+		cudaMemset(dev_ptr.get(), 0, sizeof(double)*n);
 	}
 	~double_array_gpu() {
 		thrust::device_free(dev_ptr);

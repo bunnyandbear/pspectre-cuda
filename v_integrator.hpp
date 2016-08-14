@@ -39,8 +39,7 @@ template <typename R>
 class v_integrator
 {
 public:
-	v_integrator(field_size &fs_, model_params<R> &mp_);
-	~v_integrator();
+	v_integrator(field_size &fs_, model_params<R> &mp_) : fs(fs_), mp(mp_) {}
 
 public:
 	R integrate(field<R> &phi, field<R>& chi, R a_t);
