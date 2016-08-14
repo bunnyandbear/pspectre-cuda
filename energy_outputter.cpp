@@ -32,7 +32,7 @@
 
 using namespace std;
 
-#define pow2(x) ((x)*(x))
+#define pow2(x) ((double (x)*(double (x))
 
 template <typename R>
 energy_outputter<R>::energy_outputter(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_,

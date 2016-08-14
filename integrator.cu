@@ -31,29 +31,6 @@
 
 using namespace std;
 
-/*
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:total_gradient_phi,total_gradient_chi)
-#endif
-	
-	for (int x = 0; x < fs.n; ++x) {
-		int px = (x <= fs.n/2 ? x : x - fs.n);
-		for (int y = 0; y < fs.n; ++y) {
-			int py = (y <= fs.n/2 ? y : y - fs.n);
-			for (int z = 0; z < fs.n/2+1; ++z) {
-				int pz = z;
-				int idx = z + (fs.n/2+1)*(y + fs.n*x);
-
-				R mom2 = pow<2>(mp.dp)*(pow<2>(px) + pow<2>(py) + pow<2>(pz));
-				mom2 *= (z == 0 || z == fs.n/2) ? 1 : 2;
-				
-				total_gradient_phi += mom2*(pow<2>(phi.mdata[idx][0]) + pow<2>(phi.mdata[idx][1]));
-				total_gradient_chi += mom2*(pow<2>(chi.mdata[idx][0]) + pow<2>(chi.mdata[idx][1]));
-			}
-		}
-	}
-*/
-
 #define pow2(p) ((p)*(p))
 __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 				  double *total_gradient_phi, double *total_gradient_chi,
