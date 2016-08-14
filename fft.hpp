@@ -34,27 +34,6 @@
 #include <cufftw.h>
 
 template <typename R>
-inline R* fft_malloc(size_t sz)
-{
-	return 0;
-}
-
-template <>
-inline double *fft_malloc<double>(size_t sz)
-{
-	return (double *) fftw_malloc(sz);
-}
-
-template <typename R>
-inline void fft_free(R *ptr) {}
-
-template <>
-inline void fft_free<double>(double *ptr)
-{
-	return fftw_free(ptr);
-}
-
-template <typename R>
 class fft_dft_c2r_3d_plan {};
 
 template <>

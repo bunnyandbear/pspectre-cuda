@@ -35,6 +35,7 @@
 #include "field_size.hpp"
 
 #include <cmath>
+#include <thrust/device_ptr.h>
 
 enum field_state
 {
@@ -97,6 +98,9 @@ protected:
 	field_state state;
 	fft_dft_r2c_3d_plan<R> p2m_plan;
 	fft_dft_c2r_3d_plan<R> m2p_plan;
+
+private:
+	thrust::device_ptr<fftw_complex> dev_ptr;
 
 public:
 	const char *name;

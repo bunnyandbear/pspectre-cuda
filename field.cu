@@ -31,6 +31,9 @@
 #include <cmath>
 
 #include <iostream>
+#include <thrust/device_malloc.h>
+#include <thrust/device_free.h>
+#include <thrust/fill.h>
 
 using namespace std;
 
@@ -40,21 +43,20 @@ void field<R>::construct(field_size &fs_)
 	fs = fs_;
 	ldl = 2*(fs.n/2+1);
 
-	size_t c_alloc_size = 2*sizeof(R) * fs.total_momentum_gridpoints;
-
-	mdata = (typename fft_dft_c2r_3d_plan<R>::complex_t *) fft_malloc<R>(c_alloc_size);
+	dev_ptr = thrust::device_malloc<fftw_complex>(fs.total_momentum_gridpoints);
+	mdata = thrust::raw_pointer_cast(dev_ptr);
 	data = (R *) mdata;
+	auto ptr = thrust::device_ptr<double>(data);
+	thrust::fill(ptr, ptr + 2*fs.total_momentum_gridpoints, 0.0);
 
-	m2p_plan.construct(fs.n, fs.n, fs.n, mdata, data, false);		
+	m2p_plan.construct(fs.n, fs.n, fs.n, mdata, data, false);
 	p2m_plan.construct(fs.n, fs.n, fs.n, data, mdata, false);
-
-	memset(mdata, 0, c_alloc_size);
 }
 
 template <typename R>
 field<R>::~field()
 {
-	fft_free<R>(data);
+	thrust::device_free(dev_ptr);
 }
 
 /* (x*y) * (z)
