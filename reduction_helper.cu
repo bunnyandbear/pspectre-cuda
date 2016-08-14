@@ -1,3 +1,4 @@
+#include <thrust/device_vector.h>
 #include <stdio.h>
 #include "reduction_helper.hpp"
 
@@ -32,5 +33,7 @@ double_array_gpu::~double_array_gpu()
 
 double double_array_gpu::sum()
 {
-	return 0;
+	int n = dimx * dimy * dimz;
+	thrust::device_ptr<double> ptr(array);
+	return thrust::reduce(ptr, ptr + n, 0.0, thrust::plus<double>());
 }
