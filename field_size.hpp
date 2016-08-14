@@ -32,6 +32,7 @@
 #define FIELD_SIZE_HPP
 
 #include <cmath>
+#include <cufftw.h>
 
 struct field_size
 {
@@ -47,12 +48,14 @@ struct field_size
 		
 		total_gridpoints = n*n*n;
 		total_momentum_gridpoints = n*n*(n/2+1);
+		alloc_size = total_momentum_gridpoints * sizeof(fftw_complex);
 		
 		power_length = int(sqrt(3)*0.5*n) + 1;
 	}
 
 	int n;
 	int total_gridpoints, total_momentum_gridpoints;
+	int alloc_size;
 	int power_length; // Length of a power spectrum array.
 };
 

@@ -37,6 +37,7 @@
 #include "initializer.hpp"
 
 #include <cmath>
+#include <cufftw.h>
 
 template <typename R>
 class le_style_initializer : public initializer<R>
@@ -56,7 +57,7 @@ public:
 	virtual void initialize();
 
 protected:
-	void set_mode(field<R> &fld, field<R> &flddot, R m_fld_eff, int px, int py, int pz, int idx, bool real = false);
+	void set_mode(fftw_complex *fld, fftw_complex *flddot, R m_fld_eff, int px, int py, int pz, int idx, bool real = false);
 	void initialize_field(field<R> &fld, field<R> &flddot, R m_fld_eff);
 
 protected:

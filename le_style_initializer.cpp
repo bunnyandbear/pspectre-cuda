@@ -37,7 +37,7 @@ using namespace std;
 // Sets the initial amplitude of a momentum mode with indices px, py, and pz.
 // Refer to the LatticeEasy manual sections 6.3.2 through 6.3.4
 template <typename R>
-void le_style_initializer<R>::set_mode(field<R> &fld, field<R> &flddot, R m_fld_eff, int px, int py, int pz, int idx, bool real)
+void le_style_initializer<R>::set_mode(fftw_complex *fld, fftw_complex *flddot, R m_fld_eff, int px, int py, int pz, int idx, bool real)
 {
 	R omega; // Effective mass of the fields
 	R rms_amplitude, amplitude;
@@ -61,26 +61,34 @@ void le_style_initializer<R>::set_mode(field<R> &fld, field<R> &flddot, R m_fld_
 
 	// cout << "setting mode using " << amplitude << " " << phase1 << " " << phase2 << endl;
 
-	fld.mdata[idx][0] = amplitude * (cos(phase1) + cos(phase2));
-	fld.mdata[idx][1] = amplitude * (sin(phase1) + sin(phase2));
+	fld[idx][0] = amplitude * (cos(phase1) + cos(phase2));
+	fld[idx][1] = amplitude * (sin(phase1) + sin(phase2));
 
-	flddot.mdata[idx][0] = omega * amplitude * (sin(phase1) - sin(phase2)) +
-		(mp.rescale_r - 1) * adot * fld.mdata[idx][0];
-	flddot.mdata[idx][1] = -1. * omega * amplitude * (cos(phase1) - cos(phase2)) +
-		(mp.rescale_r - 1) * adot * fld.mdata[idx][1];
+	flddot[idx][0] = omega * amplitude * (sin(phase1) - sin(phase2)) +
+		(mp.rescale_r - 1) * adot * fld[idx][0];
+	flddot[idx][1] = -1. * omega * amplitude * (cos(phase1) - cos(phase2)) +
+		(mp.rescale_r - 1) * adot * fld[idx][1];
 
 	if (real) // The 8 corners of the box are real-valued.
 	{
-		fld.mdata[idx][1] = 0.;
-		flddot.mdata[idx][1] = 0.;
+		fld[idx][1] = 0.;
+		flddot[idx][1] = 0.;
 	}
 }
 
 template <typename R>
-void le_style_initializer<R>::initialize_field(field<R> &fld, field<R> &flddot, R m_fld_eff)
+void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &flddot_dev, R m_fld_eff)
 {
-	fld.switch_state(momentum);
-	flddot.switch_state(momentum);
+	fld_dev.switch_state(momentum);
+	flddot_dev.switch_state(momentum);
+
+	fftw_complex *fld = (fftw_complex *) malloc(fs.alloc_size);
+	fftw_complex *flddot = (fftw_complex *) malloc(fs.alloc_size);
+
+	if ((fld == NULL) || (flddot == NULL)) {
+		printf("le_style_initializer::initialize_field: malloc failed\n");
+		exit(1);
+	}
 
 	for (int x = 0; x < fs.n; ++x) {
 		int x_conj = (x == 0 ? 0 : fs.n - x);
@@ -110,10 +118,10 @@ void le_style_initializer<R>::initialize_field(field<R> &fld, field<R> &flddot, 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, false);
 
-				fld.mdata[idx_conj][0] = fld.mdata[idx][0];
-				fld.mdata[idx_conj][1] = -1. * fld.mdata[idx][1];
-				flddot.mdata[idx_conj][0] = flddot.mdata[idx][0];
-				flddot.mdata[idx_conj][1] = -1. * flddot.mdata[idx][1];
+				fld[idx_conj][0] = fld[idx][0];
+				fld[idx_conj][1] = -1. * fld[idx][1];
+				flddot[idx_conj][0] = flddot[idx][0];
+				flddot[idx_conj][1] = -1. * flddot[idx][1];
 
 				// Set the z = N / 2 mode
 				z = fs.n/2;
@@ -124,10 +132,10 @@ void le_style_initializer<R>::initialize_field(field<R> &fld, field<R> &flddot, 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, false);
 
-				fld.mdata[idx_conj][0] = fld.mdata[idx][0];
-				fld.mdata[idx_conj][1] = -1. * fld.mdata[idx][1];
-				flddot.mdata[idx_conj][0] = flddot.mdata[idx][0];
-				flddot.mdata[idx_conj][1] = -1. * flddot.mdata[idx][1];
+				fld[idx_conj][0] = fld[idx][0];
+				fld[idx_conj][1] = -1. * fld[idx][1];
+				flddot[idx_conj][0] = flddot[idx][0];
+				flddot[idx_conj][1] = -1. * flddot[idx][1];
 			}
 			else if ((x == 0 || x == fs.n/2) && (y == 0 || y == fs.n/2)) {
 				int z = 0;
@@ -148,6 +156,9 @@ void le_style_initializer<R>::initialize_field(field<R> &fld, field<R> &flddot, 
 			}
 		}
 	}
+
+	fld_dev.upload(fld);
+	flddot_dev.upload(flddot);
 }
 
 template <typename R>

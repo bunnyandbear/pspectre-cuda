@@ -50,8 +50,7 @@ void field<R>::construct(field_size &fs_)
 	cout << "Memory usage before cudaMalloc:" << endl;
 	print_memory_usage();
 #endif
-	cudaError_t ret = cudaMalloc(&raw_ptr,
-				     fs.total_momentum_gridpoints * sizeof(fftw_complex));
+	cudaError_t ret = cudaMalloc(&raw_ptr, fs.alloc_size);
 	if (ret != cudaSuccess) {
 		cout << "cudaMalloc() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
@@ -141,11 +140,30 @@ void field<R>::switch_state(field_state state_)
 template <typename R>
 void field<R>::fill0()
 {
-	cudaError_t ret = cudaMemset(raw_ptr, 0,
-				     fs.total_momentum_gridpoints * sizeof(fftw_complex));
+	cudaError_t ret = cudaMemset(raw_ptr, 0, fs.alloc_size);
 	if (ret != cudaSuccess) {
 		cout << "fill0: cudaMemset() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
+	}
+}
+
+template <typename R>
+void field<R>::upload(fftw_complex *fld)
+{
+	cudaError_t ret = cudaMemcpy(raw_ptr, fld, fs.alloc_size, cudaMemcpyDefault);
+	if (ret != cudaSuccess) {
+		cout << "field::upload cudaMemcpy fail. field name = "
+		     << (name ? name : "unknown") << endl;
+	}
+}
+
+template <typename R>
+void field<R>::download(fftw_complex *fld)
+{
+	cudaError_t ret = cudaMemcpy(fld, raw_ptr, fs.alloc_size, cudaMemcpyDefault);
+	if (ret != cudaSuccess) {
+		cout << "field::download cudaMemcpy fail. field name = "
+		     << (name ? name : "unknown") << endl;
 	}
 }
 
