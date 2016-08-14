@@ -7,7 +7,7 @@ fi
 
 echo "Building... (This may take a few minutes.)"
 if [[ $1 == "debug" ]]; then
-    nvcc -DDEBUG -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
+    nvcc -DDEBUG -arch sm_35 -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
 else
-    nvcc -std=c++11 -o pspectre -O2 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
+    nvcc -std=c++11 -arch sm_35 -o pspectre -O2 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
 fi
