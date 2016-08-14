@@ -73,12 +73,12 @@ __global__ void v_integrator_kernel(model_params<double> mp,
 	int ldl = 2*(n/2+1);
 	int idx = z + ldl*(y + n*x);
 	int idx_V = z + n*(y + n*x);
-	int fz = 2 * (1 + z & 1);
-	int fy = 2 * (1 + y & 1);
-	int fx = 2 * (1 + x & 1);
-	int f = fz * fy * fx;
+	/* int fz = 2 * (1 + z & 1); */
+	/* int fy = 2 * (1 + y & 1); */
+	/* int fx = 2 * (1 + x & 1); */
+	/* int f = fz * fy * fx; */
 
-	total_V[idx_V] = ((double) f) * V(phi[idx], chi[idx], a_t, mp);
+	total_V[idx_V] = V(phi[idx], chi[idx], a_t, mp);
 }
 
 /* __global__ void v_integrator_fix_y(double *total_V, int n) */
@@ -121,7 +121,8 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	double total_V = total_V_arr.sum();
 
 	// The normalizing factor for Simpson's rule iterated over 3 dimensions.
-	return (total_V * 1./(3.*3.*3.)) / fs.total_gridpoints;
+	/* return (total_V * 1./(3.*3.*3.)) / fs.total_gridpoints; */
+	return total_V / fs.total_gridpoints;
 }
 
 // Explicit instantiations
