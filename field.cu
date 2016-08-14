@@ -76,7 +76,7 @@ field<R>::~field()
 	cout << "Memory usage before cudaFree:" << endl;
 	print_memory_usage();
 #endif
-	cudaError_t ret = cudaFree(&raw_ptr);
+	cudaError_t ret = cudaFree(raw_ptr);
 	if (ret != cudaSuccess) {
 		cout << "cudaFree() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
