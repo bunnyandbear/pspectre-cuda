@@ -91,10 +91,10 @@ void grad_computer<R>::compute(field_state final_state)
 	dim3 num_blocks(fs.n, fs.n);
 	dim3 num_threads(fs.n/2+1, 1);
 	grad_computer_kernel<<<num_blocks, num_threads>>>(
-		phi.mdata, chi.mdata,
-		phigradx.mdata, chigradx.mdata,
-		phigrady.mdata, chigrady.mdata,
-		phigradz.mdata, chigradz.mdata,
+		phi.mdata.ptr, chi.mdata.ptr,
+		phigradx.mdata.ptr, chigradx.mdata.ptr,
+		phigrady.mdata.ptr, chigrady.mdata.ptr,
+		phigradz.mdata.ptr, chigradz.mdata.ptr,
 		fs.n, mp.dp);
 
 	phigradx.switch_state(final_state);

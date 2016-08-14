@@ -28,6 +28,8 @@
 
 using namespace std;
 
+#define pow2(x) ((x)*(x))
+
 template <typename R>
 void verlet<R>::initialize()
 {
@@ -64,7 +66,7 @@ void verlet<R>::initialize()
 				int idx = z + (fs.n/2+1)*(y + fs.n*x);
 
 				R dphidt, dchidt, dphidotdt, dchidotdt;
-				R mom2 = pow<2>(mp.dp)*(pow<2>(px) + pow<2>(py) + pow<2>(pz));
+				R mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
 
 				for (int c = 0; c < 2; ++c) {
 					mp.derivs(phi.mdata[idx][c], chi.mdata[idx][c],
@@ -93,8 +95,8 @@ void verlet<R>::step()
 	adot_staggered = ts.adot + 0.5 * addot * ts.dt;
 	dptdt_staggered = dptdt + 0.5 * ddptdt * ts.dt;
 
-	ts.a += ts.adot * ts.dt + 0.5 * addot * pow<2>(ts.dt);
-	ts.physical_time += dptdt * ts.dt + 0.5 * ddptdt * pow<2>(ts.dt);
+	ts.a += ts.adot * ts.dt + 0.5 * addot * pow2(ts.dt);
+	ts.physical_time += dptdt * ts.dt + 0.5 * ddptdt * pow2(ts.dt);
 
 	phi.switch_state(momentum);
 	chi.switch_state(momentum);
@@ -120,7 +122,7 @@ void verlet<R>::step()
 				int pz = z;
 				int idx = z + (fs.n/2+1)*(y + fs.n*x);
 
-				R mom2 = pow<2>(mp.dp)*(pow<2>(px) + pow<2>(py) + pow<2>(pz));
+				R mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
 
 				for (int c = 0; c < 2; ++c) {
 
@@ -133,8 +135,8 @@ void verlet<R>::step()
 
 				mom2 *= (z == 0 || z == fs.n/2) ? 1 : 2;
 
-				total_gradient_phi += mom2*(pow<2>(phi.mdata[idx][0]) + pow<2>(phi.mdata[idx][1]));
-				total_gradient_chi += mom2*(pow<2>(chi.mdata[idx][0]) + pow<2>(chi.mdata[idx][1]));
+				total_gradient_phi += mom2*(pow2(phi.mdata[idx][0]) + pow2(phi.mdata[idx][1]));
+				total_gradient_chi += mom2*(pow2(chi.mdata[idx][0]) + pow2(chi.mdata[idx][1]));
 			}
 		}
 	}
@@ -168,7 +170,7 @@ void verlet<R>::step()
 				int idx = z + (fs.n/2+1)*(y + fs.n*x);
 
 				R dphidt, dchidt, dphidotdt, dchidotdt;
-				R mom2 = pow<2>(mp.dp)*(pow<2>(px) + pow<2>(py) + pow<2>(pz));
+				R mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
 
 				for (int c = 0; c < 2; ++c) {
 					mp.derivs(phi.mdata[idx][c], chi.mdata[idx][c],

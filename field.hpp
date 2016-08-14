@@ -33,6 +33,7 @@
 
 #include "fft.hpp"
 #include "field_size.hpp"
+#include "gpu_array_accessor.hpp"
 
 #include <cmath>
 #include <thrust/device_ptr.h>
@@ -56,13 +57,13 @@ public:
 
 public:
 	field(field_size &fs_, const char *name_ = 0)
-		: state(uninitialized), name(name_)
-	{		
+		: state(uninitialized), name(name_), data(0), mdata(0)
+	{
 		construct(fs_);
 	}
 	
 	field(const char *name_ = 0)
-		: data(0), ldl(0), mdata(0), state(uninitialized), name(name_) {};
+		: ldl(0), state(uninitialized), name(name_), data(0), mdata(0) {};
 
 	~field();
 
@@ -70,6 +71,7 @@ public:
 	void construct(field_size &fs_);
 	void divby(R v);
 	void switch_state(field_state state_);
+	void fill0();
 
 public:
 	field_size fs;
@@ -80,7 +82,7 @@ public:
 	 * @note The inner (z) dimension is padded to a size of 2*(floor(n/2)+1).
 	 */
 
-	R *data;
+	gpu_array_accessor_double data;
 
 	/**
 	 * @brief The length of the last dimension of the data array.
@@ -92,7 +94,7 @@ public:
 	 * @brief The momentum-space data.
 	 */
 
-	typename fft_dft_c2r_3d_plan<R>::complex_t *mdata;
+	gpu_array_accessor_fftw_complex mdata;
 	
 protected:
 	field_state state;

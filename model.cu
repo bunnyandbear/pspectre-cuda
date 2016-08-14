@@ -918,15 +918,15 @@ void model<R>::set_initial_conditions()
 		if (homo_ic_phi) {
 			phi.switch_state(momentum);
 			phidot.switch_state(momentum);
-			fill((R *) phi.mdata, ((R *) phi.mdata) + 2*fs.total_momentum_gridpoints, 0);
-			fill((R *) phidot.mdata, ((R *) phidot.mdata) + 2*fs.total_momentum_gridpoints, 0);
+			phi.fill0();
+			phidot.fill0();
 		}
 
 		if (homo_ic_chi) {
 			chi.switch_state(momentum);
 			chidot.switch_state(momentum);
-			fill((R *) chi.mdata, ((R *) chi.mdata) + 2*fs.total_momentum_gridpoints, 0);
-			fill((R *) chidot.mdata, ((R *) chidot.mdata) + 2*fs.total_momentum_gridpoints, 0);
+			chi.fill0();
+			chidot.fill0();
 		}
 	}
 	else {
@@ -965,10 +965,10 @@ void model<R>::set_initial_conditions()
 
 		dim3 num_blocks(fs.n, fs.n);
 		dim3 num_threads(fs.n/2+1, 1);
-		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, fs.n, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, fs.n, effpmax, effpmin);
 	}
 }
 

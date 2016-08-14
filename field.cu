@@ -44,13 +44,13 @@ void field<R>::construct(field_size &fs_)
 	ldl = 2*(fs.n/2+1);
 
 	dev_ptr = thrust::device_malloc<fftw_complex>(fs.total_momentum_gridpoints);
-	mdata = thrust::raw_pointer_cast(dev_ptr);
-	data = (R *) mdata;
-	auto ptr = thrust::device_ptr<double>(data);
-	thrust::fill(ptr, ptr + 2*fs.total_momentum_gridpoints, 0.0);
+	fftw_complex *raw_ptr = thrust::raw_pointer_cast(dev_ptr);
+	mdata = gpu_array_accessor_fftw_complex(raw_ptr);
+	data = gpu_array_accessor_double((double *) raw_ptr);
+	fill0();
 
-	m2p_plan.construct(fs.n, fs.n, fs.n, mdata, data, false);
-	p2m_plan.construct(fs.n, fs.n, fs.n, data, mdata, false);
+	m2p_plan.construct(fs.n, fs.n, fs.n, mdata.ptr, data.ptr, false);
+	p2m_plan.construct(fs.n, fs.n, fs.n, data.ptr, mdata.ptr, false);
 }
 
 template <typename R>
@@ -87,9 +87,9 @@ void field<R>::divby(R v)
 {
 	int n = fs.n;
 	if (state == momentum) {
-		momentum_divby_kernel<<<n*n, n/2+1>>>(mdata, v);
+		momentum_divby_kernel<<<n*n, n/2+1>>>(mdata.ptr, v);
 	} else if (state == position) {
-		position_divby_kernel<<<n*n, n>>>(data, v, ldl);
+		position_divby_kernel<<<n*n, n>>>(data.ptr, v, ldl);
 	}
 }
 
@@ -108,6 +108,13 @@ void field<R>::switch_state(field_state state_)
 		m2p_plan.execute();
 		divby(fs.total_gridpoints);
 	}
+}
+
+template <typename R>
+void field<R>::fill0()
+{
+	auto ptr = thrust::device_ptr<double>(data.ptr);
+	thrust::fill(ptr, ptr + 2*fs.total_momentum_gridpoints, 0.0);
 }
 
 // Explicit instantiations

@@ -32,6 +32,8 @@
 
 using namespace std;
 
+#define pow2(x) ((x)*(x))
+
 template <typename R>
 energy_outputter<R>::energy_outputter(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_,
 	field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_)
@@ -75,14 +77,14 @@ void energy_outputter<R>::output(bool no_output)
 				int cnt = (z == 0 || z == fs.n/2) ? 1 : 2;
 
 				tc += cnt;
-				R phi_squared = pow<2>(phi.mdata[idx][0]) + pow<2>(phi.mdata[idx][1]);
-				R chi_squared = pow<2>(chi.mdata[idx][0]) + pow<2>(chi.mdata[idx][1]);
+				R phi_squared = pow2(phi.mdata[idx][0]) + pow2(phi.mdata[idx][1]);
+				R chi_squared = pow2(chi.mdata[idx][0]) + pow2(chi.mdata[idx][1]);
 				avg_phi_squared += cnt * phi_squared;
 				avg_chi_squared += cnt * chi_squared;
 				// cout << x << " " << y << " " << z << " " << idx << " " << phi_squared << " " << cnt * phi_squared << " " << avg_phi_squared << endl;
 				
-				avg_phidot_squared += cnt * (pow<2>(phidot.mdata[idx][0]) + pow<2>(phidot.mdata[idx][1]));
-				avg_chidot_squared += cnt * (pow<2>(chidot.mdata[idx][0]) + pow<2>(chidot.mdata[idx][1]));
+				avg_phidot_squared += cnt * (pow2(phidot.mdata[idx][0]) + pow2(phidot.mdata[idx][1]));
+				avg_chidot_squared += cnt * (pow2(chidot.mdata[idx][0]) + pow2(chidot.mdata[idx][1]));
 				
 				avg_ffd_phi += cnt * (
 					phi.mdata[idx][0] * phidot.mdata[idx][0] +
@@ -93,9 +95,9 @@ void energy_outputter<R>::output(bool no_output)
 					chi.mdata[idx][1] * chidot.mdata[idx][1]
 				);
 				
-				R mom2x = pow<2>(mp.dp) * pow<2>(px);
-				R mom2y = pow<2>(mp.dp) * pow<2>(py);
-				R mom2z = pow<2>(mp.dp) * pow<2>(pz);
+				R mom2x = pow2(mp.dp) * pow2(px);
+				R mom2y = pow2(mp.dp) * pow2(py);
+				R mom2z = pow2(mp.dp) * pow2(pz);
 				avg_gradient_phi_x += cnt * mom2x * phi_squared;
 				avg_gradient_chi_x += cnt * mom2x * chi_squared;
 				avg_gradient_phi_y += cnt * mom2y * phi_squared;
@@ -107,24 +109,24 @@ void energy_outputter<R>::output(bool no_output)
 	}
 
 	// The first factor of 1./N^3 comes from Parseval's theorem.
-	avg_phidot_squared /= 2*pow<2, R>(fs.total_gridpoints);
-	avg_chidot_squared /= 2*pow<2, R>(fs.total_gridpoints);
+	avg_phidot_squared /= 2*pow2(fs.total_gridpoints);
+	avg_chidot_squared /= 2*pow2(fs.total_gridpoints);
 
-	R fld_fac = 0.5 * pow<2>(mp.rescale_r) * pow<2>(ts.adot/ts.a);
-	avg_phi_squared *= fld_fac / pow<2, R>(fs.total_gridpoints);
-	avg_chi_squared *= fld_fac / pow<2, R>(fs.total_gridpoints);
+	R fld_fac = 0.5 * pow2(mp.rescale_r) * pow2(ts.adot/ts.a);
+	avg_phi_squared *= fld_fac / pow2(fs.total_gridpoints);
+	avg_chi_squared *= fld_fac / pow2(fs.total_gridpoints);
 
 	R grad_fac = 0.5 * pow(ts.a, -2. * mp.rescale_s - 2.);
-	avg_gradient_phi_x *= grad_fac / pow<2, R>(fs.total_gridpoints);
-	avg_gradient_chi_x *= grad_fac / pow<2, R>(fs.total_gridpoints);
-	avg_gradient_phi_y *= grad_fac / pow<2, R>(fs.total_gridpoints);
-	avg_gradient_chi_y *= grad_fac / pow<2, R>(fs.total_gridpoints);
-	avg_gradient_phi_z *= grad_fac / pow<2, R>(fs.total_gridpoints);
-	avg_gradient_chi_z *= grad_fac / pow<2, R>(fs.total_gridpoints);
+	avg_gradient_phi_x *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_chi_x *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_phi_y *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_chi_y *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_phi_z *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_chi_z *= grad_fac / pow2(fs.total_gridpoints);
 	
 	R ffd_fac = -mp.rescale_r * ts.adot/ts.a;
-	avg_ffd_phi *= ffd_fac / pow<2, R>(fs.total_gridpoints);
-	avg_ffd_chi *= ffd_fac / pow<2, R>(fs.total_gridpoints);
+	avg_ffd_phi *= ffd_fac / pow2(fs.total_gridpoints);
+	avg_ffd_chi *= ffd_fac / pow2(fs.total_gridpoints);
 
 	// This is the *average* energy per gridpoint.
 	avg_rho_phys = avg_V + avg_phi_squared + avg_chi_squared +

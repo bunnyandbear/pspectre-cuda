@@ -133,11 +133,11 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n, 1);
-	nonlin_trans_kernel<<<nr_blocks, nr_threads>>>(phi.data, chi.data,
-						       phi2chi.data, chi2phi.data,
-						       phi_md.data, chi_md.data,
-						       phi3.data, chi3.data,
-						       phi5.data, chi5.data,
+	nonlin_trans_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
+						       phi2chi.data.ptr, chi2phi.data.ptr,
+						       phi_md.data.ptr, chi_md.data.ptr,
+						       phi3.data.ptr, chi3.data.ptr,
+						       phi5.data.ptr, chi5.data.ptr,
 						       mp.lambda_phi, mp.lambda_chi,
 						       mp.gamma_phi, mp.gamma_chi,
 						       mp.md_e_phi, mp.md_c_phi,

@@ -86,7 +86,7 @@ void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
 	auto total_gradient_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
 	dim3 num_blocks(fs.n, fs.n);
 	dim3 num_threads(fs.n/2+1, 1);
-	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata, chi.mdata,
+	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, chi.mdata.ptr,
 						       total_gradient_phi_arr.ptr(),
 						       total_gradient_chi_arr.ptr(),
 						       fs.n, mp.dp);
