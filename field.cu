@@ -44,18 +44,22 @@ void field<R>::construct(field_size &fs_)
 	fs = fs_;
 	ldl = 2*(fs.n/2+1);
 
+#ifdef DEBUG
 	cout << "\nConstructing field " << (name ? name : "unknown") << endl;
 	cout << "Number of grid points: " << fs.n << endl;
 	cout << "Memory usage before cudaMalloc:" << endl;
 	print_memory_usage();
+#endif
 	cudaError_t ret = cudaMalloc(&raw_ptr,
 				     fs.total_momentum_gridpoints * sizeof(fftw_complex));
 	if (ret != cudaSuccess) {
 		cout << "cudaMalloc() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
 	}
+#ifdef DEBUG
 	cout << "Memory usage after cudaMalloc:" << endl;
 	print_memory_usage();
+#endif
 	mdata = gpu_array_accessor_fftw_complex((fftw_complex *) raw_ptr);
 	data = gpu_array_accessor_double(raw_ptr);
 	fill0();
@@ -67,16 +71,20 @@ void field<R>::construct(field_size &fs_)
 template <typename R>
 field<R>::~field()
 {
+#ifdef DEBUG
 	cout << "Destructing field " << (name ? name : "unknown") << endl;
 	cout << "Memory usage before cudaFree:" << endl;
 	print_memory_usage();
+#endif
 	cudaError_t ret = cudaFree(&raw_ptr);
 	if (ret != cudaSuccess) {
 		cout << "cudaFree() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
 	}
+#ifdef DEBUG
 	cout << "Memory usage after cudaFree:" << endl;
 	print_memory_usage();
+#endif
 }
 
 /* (x*y) * (z)
