@@ -1,8 +1,5 @@
-#include <thrust/device_ptr.h>
-#include <thrust/fill.h>
-#include <thrust/copy.h>
+#include <cuda_runtime.h>
 #include <cufftw.h>
-#include <vector>
 
 class fftw_complex_accessor {
 	fftw_complex *ptr;
@@ -18,12 +15,11 @@ public:
 		return val[c_idx];
 	}
 	void operator=(double rhs) {
-		double *p = (double *) ptr;
-		thrust::fill(p + c_idx, p + c_idx + 1, rhs);
+		double *p = ((double *) ptr) + c_idx;
+		cudaMemcpy(p, &rhs, sizeof(double), cudaMemcpyDefault);
 	}
 	void operator+=(double rhs) {
-		double *p = (double *) ptr;
-		thrust::fill(p + c_idx, p + c_idx + 1, *this + rhs);
+		*this = *this + rhs;
 	}
 };
 
@@ -41,7 +37,7 @@ public:
 		return val;
 	}
 	void operator=(double rhs) {
-		thrust::fill(ptr + i, ptr + i + 1, rhs);
+		cudaMemcpy(ptr + i, &rhs, sizeof(double), cudaMemcpyDefault);
 	}
 };
 
