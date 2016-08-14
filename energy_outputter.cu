@@ -45,12 +45,6 @@ energy_outputter<R>::energy_outputter(field_size &fs_, model_params<R> &mp_, tim
 	of << setprecision(30) << scientific;
 }
 
-/*
-			}
-		}
-	}
-*/
-
 __global__ void energy_sum_kernel(fftw_complex *phi, fftw_complex *chi,
 				  fftw_complex *phidot, fftw_complex *chidot,
 				  double *avg_phi_squared, double *avg_chi_squared,
