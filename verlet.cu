@@ -24,6 +24,7 @@
  */
 
 #include "pow.hpp"
+#include "reduction_helper.hpp"
 #include "verlet.hpp"
 #include <cufftw.h>
 
@@ -211,6 +212,38 @@ __global__ void verlet_step_kernel(model_params<double> mp,
 	}
 }
 
+__global__ void step_reduction_kernel(fftw_complex *phi, fftw_complex *chi,
+				      fftw_complex *phidot, fftw_complex *chidot,
+				      fftw_complex *phiddot, fftw_complex *chiddot,
+				      fftw_complex *phidot_staggered, fftw_complex *chidot_staggered,
+				      double *total_gradient_phi, double *total_gradient_chi,
+				      double dp, double dt, int n)
+{
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int px = x <= n/2 ? x : x - n;
+	int py = y <= n/2 ? y : y - n;
+	int pz = z;
+	int idx = z + (n/2+1)*(y + n*x);
+
+	double mom2 = pow2(dp)*(pow2(px) + pow2(py) + pow2(pz));
+
+	#pragma unroll
+	for (int c = 0; c < 2; ++c) {
+		phidot_staggered[idx][c] = phidot[idx][c] + 0.5 * phiddot[idx][c] * dt;
+		chidot_staggered[idx][c] = chidot[idx][c] + 0.5 * chiddot[idx][c] * dt;
+
+		phi[idx][c] += phidot_staggered[idx][c]*dt;
+		chi[idx][c] += chidot_staggered[idx][c]*dt;
+	}
+
+	mom2 *= (z == 0 || z == n/2) ? 1 : 2;
+
+	total_gradient_phi[idx] = mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
+	total_gradient_chi[idx] = mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
+}
+
 template <typename R>
 void verlet<R>::step()
 {
@@ -230,38 +263,20 @@ void verlet<R>::step()
 	phidot_staggered.switch_state(momentum);
 	chidot_staggered.switch_state(momentum);
 
-	R total_gradient_phi = 0.0, total_gradient_chi = 0.0;
+	auto total_gradient_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto total_gradient_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	dim3 num_blocks(fs.n, fs.n);
+	dim3 num_threads(fs.n/2+1, 1);
+	step_reduction_kernel<<<num_blocks, num_threads>>>(
+		phi.mdata.ptr, chi.mdata.ptr,
+		phidot.mdata.ptr, chidot.mdata.ptr,
+		phiddot.mdata.ptr, chiddot.mdata.ptr,
+		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
+		total_gradient_phi_arr.ptr(), total_gradient_chi_arr.ptr(),
+		mp.dp, ts.dt, fs.n);
 
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:total_gradient_phi,total_gradient_chi)
-#endif
-	
-	for (int x = 0; x < fs.n; ++x) {
-		int px = (x <= fs.n/2 ? x : x - fs.n);
-		for (int y = 0; y < fs.n; ++y) {
-			int py = (y <= fs.n/2 ? y : y - fs.n);
-			for (int z = 0; z < fs.n/2+1; ++z) {
-				int pz = z;
-				int idx = z + (fs.n/2+1)*(y + fs.n*x);
-
-				R mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
-
-				for (int c = 0; c < 2; ++c) {
-
-					phidot_staggered.mdata[idx][c] = phidot.mdata[idx][c] + 0.5 * phiddot.mdata[idx][c] * ts.dt;
-					chidot_staggered.mdata[idx][c] = chidot.mdata[idx][c] + 0.5 * chiddot.mdata[idx][c] * ts.dt;
-
-					phi.mdata[idx][c] += phidot_staggered.mdata[idx][c]*ts.dt;
-					chi.mdata[idx][c] += chidot_staggered.mdata[idx][c]*ts.dt;
-				}
-
-				mom2 *= (z == 0 || z == fs.n/2) ? 1 : 2;
-
-				total_gradient_phi += mom2*(pow2(phi.mdata[idx][0]) + pow2(phi.mdata[idx][1]));
-				total_gradient_chi += mom2*(pow2(chi.mdata[idx][0]) + pow2(chi.mdata[idx][1]));
-			}
-		}
-	}
+	R total_gradient_phi = total_gradient_phi_arr.sum();
+	R total_gradient_chi = total_gradient_chi_arr.sum();	
 
 	R avg_gradient_phi = total_gradient_phi/pow<2, R>(fs.total_gridpoints);
 	R avg_gradient_chi = total_gradient_chi/pow<2, R>(fs.total_gridpoints);
