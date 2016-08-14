@@ -6,4 +6,5 @@ else
 fi
 
 echo "Building... (This may take a few minutes.)"
-nvcc $@ -std=c++11 -O2 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
+#nvcc -std=c++11 -O2 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp
+nvcc -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw --compiler-options -fopenmp

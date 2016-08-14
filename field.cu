@@ -31,11 +31,12 @@
 #include <cmath>
 
 #include <iostream>
-#include <thrust/device_malloc.h>
 #include <thrust/device_free.h>
 #include <thrust/fill.h>
 
 using namespace std;
+
+void print_memory_usage();
 
 template <typename R>
 void field<R>::construct(field_size &fs_)
@@ -43,10 +44,20 @@ void field<R>::construct(field_size &fs_)
 	fs = fs_;
 	ldl = 2*(fs.n/2+1);
 
-	dev_ptr = thrust::device_malloc<fftw_complex>(fs.total_momentum_gridpoints);
-	fftw_complex *raw_ptr = thrust::raw_pointer_cast(dev_ptr);
-	mdata = gpu_array_accessor_fftw_complex(raw_ptr);
-	data = gpu_array_accessor_double((double *) raw_ptr);
+	cout << "\nConstructing field " << (name ? name : "unknown") << endl;
+	cout << "Number of grid points: " << fs.n << endl;
+	cout << "Memory usage before cudaMalloc:" << endl;
+	print_memory_usage();
+	cudaError_t ret = cudaMalloc(&raw_ptr,
+				     fs.total_momentum_gridpoints * sizeof(fftw_complex));
+	if (ret != cudaSuccess) {
+		cout << "cudaMalloc() failed. GPUassert: "
+		     << cudaGetErrorString(ret) << endl;
+	}
+	cout << "Memory usage after cudaMalloc:" << endl;
+	print_memory_usage();
+	mdata = gpu_array_accessor_fftw_complex((fftw_complex *) raw_ptr);
+	data = gpu_array_accessor_double(raw_ptr);
 	fill0();
 
 	m2p_plan.construct(fs.n, fs.n, fs.n, mdata.ptr, data.ptr, false);
@@ -56,7 +67,16 @@ void field<R>::construct(field_size &fs_)
 template <typename R>
 field<R>::~field()
 {
-	thrust::device_free(dev_ptr);
+	cout << "Destructing field " << (name ? name : "unknown") << endl;
+	cout << "Memory usage before cudaFree:" << endl;
+	print_memory_usage();
+	cudaError_t ret = cudaFree(&raw_ptr);
+	if (ret != cudaSuccess) {
+		cout << "cudaFree() failed. GPUassert: "
+		     << cudaGetErrorString(ret) << endl;
+	}
+	cout << "Memory usage after cudaFree:" << endl;
+	print_memory_usage();
 }
 
 /* (x*y) * (z)
@@ -113,8 +133,12 @@ void field<R>::switch_state(field_state state_)
 template <typename R>
 void field<R>::fill0()
 {
-	auto ptr = thrust::device_ptr<double>(data.ptr);
-	thrust::fill(ptr, ptr + 2*fs.total_momentum_gridpoints, 0.0);
+	cudaError_t ret = cudaMemset(raw_ptr, 0,
+				     fs.total_momentum_gridpoints * sizeof(fftw_complex));
+	if (ret != cudaSuccess) {
+		cout << "fill0: cudaMemset() failed. GPUassert: "
+		     << cudaGetErrorString(ret) << endl;
+	}
 }
 
 // Explicit instantiations

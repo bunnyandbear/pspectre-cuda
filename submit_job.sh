@@ -18,6 +18,6 @@ echo "#!/bin/bash
 
 module load GCC/4.9.2
 module load CUDA/7.5.18
-srun $DIR/a.out
+srun $DIR/a.out -L 6 -N 256 -t 0.00625
 " > $batchfile
 sbatch $batchfile

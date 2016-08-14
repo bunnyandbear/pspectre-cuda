@@ -23,3 +23,17 @@ void print_cuda_info()
 		       1.0e6);
 	}
 }
+
+void print_memory_usage()
+{
+	size_t free = 0;
+	size_t total = 0;
+	cudaError_t ret = cudaMemGetInfo(&free, &total);
+	if (ret != cudaSuccess) {
+		printf("Error: cudaMemGetInfo fails, %s\n", cudaGetErrorString(ret));
+	}
+	size_t used = total - free;
+	double to_mb = 1024.0 * 1024.0;
+	printf("GPU memory usage: used = %f MB, free = %f MB, total = %f MB\n",
+	       used / to_mb, free / to_mb, total / to_mb);
+}

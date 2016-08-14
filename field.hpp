@@ -35,9 +35,6 @@
 #include "field_size.hpp"
 #include "gpu_array_accessor.hpp"
 
-#include <cmath>
-#include <thrust/device_ptr.h>
-
 enum field_state
 {
 	uninitialized,
@@ -52,9 +49,6 @@ enum field_state
 template <typename R>
 class field
 {
-public:
-	typedef typename fft_dft_r2c_3d_plan<R>::complex_t complex_t;
-
 public:
 	field(field_size &fs_, const char *name_ = 0)
 		: state(uninitialized), name(name_), data(0), mdata(0)
@@ -102,7 +96,7 @@ protected:
 	fft_dft_c2r_3d_plan<R> m2p_plan;
 
 private:
-	thrust::device_ptr<fftw_complex> dev_ptr;
+	double *raw_ptr;
 
 public:
 	const char *name;
