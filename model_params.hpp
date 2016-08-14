@@ -209,49 +209,6 @@ struct model_params
 			);
 	}
 
-	/**
-	 * This is where the equations of motion for the fields are actually evaluated.
-	 * The first and second time derivatives of the fields are computed in accordance
-	 * with the Klein-Gordon equation, which is written in program units and
-	 * transformed to momentum-space. Note that the choice of program units has eliminated
-	 * the first-time-derivative term from the second-time-derivative equation.
-	 */
-
-	void derivs(R phi, R chi, R phidot, R chidot,
-		R chi2phi, R phi2chi, R phi3, R chi3,
-		R phi5, R chi5, R phi_md, R chi_md, R a_t, R adot_t, R addot_t,
-		R mom2, R &dphidt, R &dchidt, R &dphidotdt, R &dchidotdt)
-	{
-		using namespace std;
-		
-		dphidt = phidot;
-		dchidt = chidot;
-
-		dphidotdt = -pow(a_t, -2. * rescale_s - 2.) * mom2 * phi +
-			rescale_r * ((rescale_s - rescale_r + 2) * pow<2>(adot_t/a_t) + addot_t/a_t)*phi -
-			pow(a_t, -2.*rescale_s - 2. * rescale_r)/pow<2>(rescale_B)*(
-				(
-					(md_e_phi != 0) ? pow(a_t, 2. * rescale_r) * phi_md :
-					pow<2>(m_phi) * pow(a_t, 2. * rescale_r) * phi
-				) +
-				lambda_phi/pow<2>(rescale_A) * phi3 +
-				pow<2>(g/rescale_A)*chi2phi +
-				gamma_phi/pow<4>(rescale_A) * pow(a_t, -2. * rescale_r) * phi5
-			);
-
-		dchidotdt = -pow(a_t, -2. * rescale_s - 2.) * mom2 * chi +
-			rescale_r * ((rescale_s - rescale_r + 2) * pow<2>(adot_t/a_t) + addot_t/a_t)*chi -
-			pow(a_t, -2.*rescale_s - 2. * rescale_r)/pow<2>(rescale_B)*(
-				(
-					(md_e_chi != 0) ? pow(a_t, 2. * rescale_r) * chi_md :
-					pow<2>(m_chi) * pow(a_t, 2. * rescale_r) * chi
-				) +
-				lambda_chi/pow<2>(rescale_A) * chi3 +
-				pow<2>(g/rescale_A)*phi2chi +
-				gamma_chi/pow<4>(rescale_A) * pow(a_t, -2. * rescale_r) * chi5
-			);
-	}
-
 	/*
 	 * Returns addot based on a power-law background expansion.
 	 * See equation 6.46 and 6.49 of the LatticeEasy manual.
