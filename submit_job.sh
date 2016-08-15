@@ -18,6 +18,9 @@ echo "#!/bin/bash
 
 module load GCC/4.9.2
 module load CUDA/7.5.18
-srun $DIR/pspectre -L 6 -N 128 -t 0.00625
+#srun /bin/bash $DIR/build.sh
+srun $DIR/pspectre @params.txt
+#srun $DIR/pspectre
+#srun $DIR/pspectre -L 6 -N 128 -t 0.00625
 " > $batchfile
 sbatch $batchfile
