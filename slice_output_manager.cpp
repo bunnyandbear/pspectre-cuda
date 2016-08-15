@@ -24,6 +24,7 @@
  */
 
 #include "slice_output_manager.hpp"
+#include "host_field.hpp"
 
 using namespace std;
 
@@ -66,6 +67,28 @@ void slice_output_manager<R>::output()
 	phidot.switch_state(position);
 	chidot.switch_state(position);
 
+	auto phi_host = host_field(fs);
+	auto chi_host = host_field(fs);
+	auto phidot_host = host_field(fs);
+	auto chidot_host = host_field(fs);
+	auto phigradx_host = host_field(fs);
+	auto phigrady_host = host_field(fs);
+	auto phigradz_host = host_field(fs);
+	auto chigradx_host = host_field(fs);
+	auto chigrady_host = host_field(fs);
+	auto chigradz_host = host_field(fs);
+
+	phi.download(phi_host);
+	chi.download(chi_host);
+	phidot.download(phidot_host);
+	chidot.download(chidot_host);
+	gc.phigradx.download(phigradx_host);
+	gc.phigrady.download(phigrady_host);
+	gc.phigradz.download(phigradz_host);
+	gc.chigradx.download(chigradx_host);
+	gc.chigrady.download(chigrady_host);
+	gc.chigradz.download(chigradz_host);
+
 	for (int i = 0; i < (slicedim > 2 ? slicelength : 1); i += sliceskip) {
 		for (int j = 0; j < (slicedim > 1 ? slicelength : 1); j += sliceskip) {
 			for (int k = 0; k < slicelength; k += sliceskip) {
@@ -76,39 +99,42 @@ void slice_output_manager<R>::output()
 							for (int z = k; z < k + sliceskip && z < fs.n; ++z) {
 								int fdx = z + phi.ldl*(y + fs.n*x);
 								int idx = z + gc.phigradx.ldl*(y + fs.n*x);
-								for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
-									it != outputters.end(); ++it) {
-									(*it)->accumulate(phi.data[fdx], chi.data[fdx],
-											  phidot.data[fdx], chidot.data[fdx],
-											  gc.phigradx.data[idx], gc.chigradx.data[idx],
-											  gc.phigrady.data[idx], gc.chigrady.data[idx],
-											  gc.phigradz.data[idx], gc.chigradz.data[idx]);
+								for (auto it = outputters.begin();
+								     it != outputters.end(); ++it) {
+									(*it)->accumulate(phi_host.data()[fdx],
+											  chi_host.data()[fdx],
+											  phidot_host.data()[fdx],
+											  chidot_host.data()[fdx],
+											  phigradx_host.data()[idx],
+											  chigradx_host.data()[idx],
+											  phigrady_host.data()[idx],
+											  chigrady_host.data()[idx],
+											  phigradz_host.data()[idx],
+											  chigradz_host.data()[idx]);
 								}
 							}
 						}
 					}
 
-					for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
-						it != outputters.end(); ++it) {
+					for (auto it = outputters.begin();
+					     it != outputters.end(); ++it) {
 						(*it)->advance();
 					}	
 				}
 				else {
 					int fdx = k + phi.ldl*(j + fs.n*i);
 					int idx = k + gc.phigradx.ldl*(j + fs.n*i);
-					for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
-						it != outputters.end(); ++it) {
-						(*it)->accumulate(phi.data[fdx], chi.data[fdx],
-								  phidot.data[fdx], chidot.data[fdx],
-								  gc.phigradx.data[idx], gc.chigradx.data[idx],
-								  gc.phigrady.data[idx], gc.chigrady.data[idx],
-								  gc.phigradz.data[idx], gc.chigradz.data[idx]);
+					for (auto it = outputters.begin(); it != outputters.end(); ++it) {
+						(*it)->accumulate(phi_host.data()[fdx], chi_host.data()[fdx],
+								  phidot_host.data()[fdx], chidot_host.data()[fdx],
+								  phigradx_host.data()[idx], chigradx_host.data()[idx],
+								  phigrady_host.data()[idx], chigrady_host.data()[idx],
+								  phigradz_host.data()[idx], chigradz_host.data()[idx]);
 						(*it)->advance();
 					}
 				}
 				
-				for (typename vector< slice_outputter<R> * >::iterator it = outputters.begin();
-					it != outputters.end(); ++it) {
+				for (auto it = outputters.begin(); it != outputters.end(); ++it) {
 					(*it)->flush();
 				}
 			}

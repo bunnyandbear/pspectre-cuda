@@ -20,4 +20,7 @@ public:
 	operator fftw_complex *() {
 		return ptr;
 	}
+	double *data() {
+		return (double *) ptr;
+	}
 };
