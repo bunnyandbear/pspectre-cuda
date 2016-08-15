@@ -89,7 +89,6 @@ void slice_output_manager<R>::output()
 	gc.chigrady.download(chigrady_host);
 	gc.chigradz.download(chigradz_host);
 
-	#pragma omp parallel for
 	for (int i = 0; i < (slicedim > 2 ? slicelength : 1); i += sliceskip) {
 		for (int j = 0; j < (slicedim > 1 ? slicelength : 1); j += sliceskip) {
 			for (int k = 0; k < slicelength; k += sliceskip) {
