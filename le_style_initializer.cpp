@@ -28,6 +28,7 @@
 #include "pow.hpp"
 #include "fft.hpp"
 #include "le_style_initializer.hpp"
+#include "host_field.hpp"
 
 #include <cstdlib>
 #include <cmath>
@@ -82,13 +83,8 @@ void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &fldd
 	fld_dev.switch_state(momentum);
 	flddot_dev.switch_state(momentum);
 
-	fftw_complex *fld = (fftw_complex *) malloc(fs.alloc_size);
-	fftw_complex *flddot = (fftw_complex *) malloc(fs.alloc_size);
-
-	if ((fld == NULL) || (flddot == NULL)) {
-		printf("le_style_initializer::initialize_field: malloc failed\n");
-		exit(1);
-	}
+	auto fld = host_field(fs);
+	auto flddot = host_field(fs);
 
 	for (int x = 0; x < fs.n; ++x) {
 		int x_conj = (x == 0 ? 0 : fs.n - x);
