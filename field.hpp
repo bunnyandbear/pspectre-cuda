@@ -67,7 +67,6 @@ public:
 	void switch_state(field_state state_);
 	void fill0();
 	void upload(fftw_complex *fld);
-	void download(fftw_complex *fld);
 
 public:
 	field_size fs;

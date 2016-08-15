@@ -157,15 +157,5 @@ void field<R>::upload(fftw_complex *fld)
 	}
 }
 
-template <typename R>
-void field<R>::download(fftw_complex *fld)
-{
-	cudaError_t ret = cudaMemcpy(fld, raw_ptr, fs.alloc_size, cudaMemcpyDefault);
-	if (ret != cudaSuccess) {
-		cout << "field::download cudaMemcpy fail. field name = "
-		     << (name ? name : "unknown") << endl;
-	}
-}
-
 // Explicit instantiations
 template class field<double>;

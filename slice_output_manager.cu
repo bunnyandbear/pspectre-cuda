@@ -28,7 +28,13 @@
 #include "reduction_helper.hpp"
 #include "pow.hpp"
 
+#include <cstdio>
 #include <cmath>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 __device__ __host__ double compute_energy_scaling(double a, double adot)
 {
@@ -126,6 +132,21 @@ __global__ void compute_rho_kernel(double *phi, double *chi,
 				   phigradz[idx], chigradz[idx]);
 }
 
+static void write_array_to_file(double_array_gpu &arr, const char *field, int idx)
+{
+	char name[32] = {0};
+	snprintf(name, sizeof(name), "%s_%.5d", field, idx);
+	int fd = open(name, O_RDWR);
+	void *p = mmap((caddr_t)0, arr.alloc_size(), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (p == (caddr_t)(-1)) {
+		perror("write_array_to_file: mmap failed.");
+	} else {
+		arr.download((double *)p);
+		munmap(p, arr.alloc_size());
+	}
+	close(fd);
+}
+
 template <typename R>
 void slice_output_manager<R>::output()
 {
@@ -149,6 +170,8 @@ void slice_output_manager<R>::output()
 						      gc.phigrady.data.ptr, gc.chigrady.data.ptr,
 						      gc.phigradz.data.ptr, gc.chigradz.data.ptr,
 						      rho_out.ptr(), ts.a, ts.adot, fs.n);
+	write_array_to_file(phi_out, "phi", bin_idx);
+	write_array_to_file(rho_out, "rho", bin_idx);
 
 	++bin_idx;
 }

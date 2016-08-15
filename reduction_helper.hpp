@@ -19,7 +19,7 @@ struct double_array_gpu {
 		print_memory_usage();
 #endif
 		dev_ptr = thrust::device_malloc<double>(n);
-		cudaMemset(dev_ptr.get(), 0, sizeof(double)*n);
+		cudaMemset(dev_ptr.get(), 0, alloc_size());
 #ifdef DEBUG
 		std::cout << "Memory usage after cudaMalloc:" << std::endl;
 		print_memory_usage();
@@ -43,6 +43,15 @@ struct double_array_gpu {
 	}
 	double *ptr() {
 		return thrust::raw_pointer_cast(dev_ptr);
+	}
+	int alloc_size() {
+		return sizeof(double)*n;
+	}
+	void download(double *dst) {
+		cudaError_t ret = cudaMemcpy(dst, ptr(), alloc_size(), cudaMemcpyDefault);
+		if (ret != cudaSuccess) {
+			std::cout << "download(): cudaMemcpy fail." << std::endl;
+		}
 	}
 private:
 	int n;
