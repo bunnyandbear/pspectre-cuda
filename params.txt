@@ -37,30 +37,30 @@
 -T 800.0
 
 # Set a parameter value
--p gamma_phi=0
--p gamma_chi=0
--p lambda_phi=0
--p lambda_chi=0
--p g=0
--p m_phi=0.000022139442217092964
--p m_chi=0
--p phi0=0.08211141279686777
--p chi0=0
--p phidot0=0.0176648818699687
--p chidot0=0
+# -p gamma_phi=0
+# -p gamma_chi=0
+# -p lambda_phi=0
+# -p lambda_chi=0
+# -p g=0
+# -p m_phi=0.000022139442217092964
+# -p m_chi=0
+# -p phi0=0.08211141279686777
+# -p chi0=0
+# -p phidot0=0.0176648818699687
+# -p chidot0=0
 
--p monodromy_exp_phi=0.5
--p monodromy_scale_phi=0.003989422804014327
+# -p monodromy_exp_phi=0.5
+# -p monodromy_scale_phi=0.003989422804014327
 
 # Enable slice output of a variable
--s phi
+#-s phi
 # -s chi
 # -s V
 # -s T_phi
 # -s T_chi
 # -s G_phi
 # -s G_chi
--s rho
+#-s rho
 # -s p
 # -s gpot
 
