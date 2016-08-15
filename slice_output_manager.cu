@@ -136,7 +136,7 @@ static void write_array_to_file(double_array_gpu &arr, const char *field, int id
 {
 	char name[32] = {0};
 	snprintf(name, sizeof(name), "%s_%.5d", field, idx);
-	int fd = open(name, O_RDWR);
+	int fd = open(name, O_RDWR | O_CREAT);
 	void *p = mmap((caddr_t)0, arr.alloc_size(), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if (p == (caddr_t)(-1)) {
 		perror("write_array_to_file: mmap failed.");
