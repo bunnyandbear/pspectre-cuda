@@ -51,10 +51,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 using namespace std;
 
 // Forward declaration of integrator classes...
@@ -117,22 +113,7 @@ void model<R>::set_output_directory(const char *uodn)
  * @li -A \<real\>: The final scale factor
  * @li -p \<name\>=\<value\>[,\<name\>=\<value\>]*: Set a parameter value. Valid parameters are:
  * @code
- *	gamma_phi
- *	gamma_chi
- *	lambda_phi
- *	lambda_chi
- *	g
- *	m_phi
- *	m_chi
- *	phi0
- *	chi0
- *	phidot0
- *	chidot0
  *	ics_scale
- *	monodromy_exp_phi
- *	monodromy_exp_chi
- *	monodromy_scale_phi
- *	monodromy_scale_chi
  *	H0
  *	ics_eff_size
  *	(a0 can be specified when H0 is specified by appending :\<a0\> to the H0 value;
@@ -241,12 +222,7 @@ model<R>::model(int argc, char *argv[])
 	extern int optopt;
 		
 	const char *param_names[] = {
-		"gamma_phi", "gamma_chi",
-		"lambda_phi", "lambda_chi",
-		"g", "m_phi", "m_chi",
-		"phi0", "chi0", "phidot0", "chidot0",
-		"ics_scale", "monodromy_exp_phi", "monodromy_exp_chi",
-		"monodromy_scale_phi", "monodromy_scale_chi",
+		"ics_scale",
 		"H0", "ics_eff_size", 0
 	};
 
@@ -352,9 +328,6 @@ model<R>::model(int argc, char *argv[])
 				exit(1);
 			}
 			break;
-		case 'L':
-			mp.len = atof(optarg);
-			break;
 		case 'R':
 			seed = atoi(optarg);
 			break;
@@ -373,50 +346,8 @@ model<R>::model(int argc, char *argv[])
 					cerr << "No value specified for parameter: " << param_names[index] << endl;
 					show_usage = true;
 				}
-				else if (!strcmp(param_names[index], "gamma_phi")) {
-					mp.gamma_phi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "gamma_chi")) {
-					mp.gamma_chi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "lambda_phi")) {
-					mp.lambda_phi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "lambda_chi")) {
-					mp.lambda_chi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "g")) {
-					mp.g = atof(value);
-				}
-				else if (!strcmp(param_names[index], "m_phi")) {
-					mp.m_phi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "m_chi")) {
-					mp.m_chi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "phi0")) {
-					mp.phi0 = atof(value);
-				}
-				else if (!strcmp(param_names[index], "chi0")) {
-					mp.chi0 = atof(value);
-				}
-				else if (!strcmp(param_names[index], "phidot0")) {
-					mp.phidot0 = atof(value);
-				}
-				else if (!strcmp(param_names[index], "chidot0")) {
-					mp.chidot0 = atof(value);
-				}
 				else if (!strcmp(param_names[index], "ics_scale")) {
 					ics_scale = atof(value);
-				}
-				else if (!strcmp(param_names[index], "monodromy_exp_phi")) {
-					mp.md_e_phi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "monodromy_exp_chi")) {
-					mp.md_e_chi = atof(value);
-				}
-				else if (!strcmp(param_names[index], "monodromy_scale_phi")) {
-					mp.md_s_phi = atof(value);
 				}
 				else if (!strcmp(param_names[index], "H0")) {
 					// Parse as H0:a0, where a0 is 1 by default.
@@ -744,12 +675,6 @@ model<R>::model(int argc, char *argv[])
 	
 	cout << "Using " << precision_name<R>() << " precision." << endl;
 
-	mp.calculate_derived_params(true);
-#ifdef DOT0_IN_PLANCK
-	mp.phidot0 *= mp.rescale_B;
-	mp.chidot0 *= mp.rescale_B;
-#endif
-
 	fs.calculate_size_totals();
 
 	phi.construct(fs);
@@ -768,46 +693,9 @@ model<R>::model(int argc, char *argv[])
 
 	set_output_directory(odn.c_str());
 
-	gc = new grad_computer<R>(fs, mp, phi, chi);
-	som = new slice_output_manager<R>(fs, mp, ts, phi, chi, phidot, chidot, *gc,
-		slicedim, slicelength, sliceskip, sliceaverage, sliceflt);
-	
-	if (slice_phi) som->add_outputter("phi", grid_funcs<R>::compute_phi);
-	if (slice_chi) som->add_outputter("chi", grid_funcs<R>::compute_chi);
-	if (slice_phidot) som->add_outputter("phidot", grid_funcs<R>::compute_phidot);
-	if (slice_chidot) som->add_outputter("chidot", grid_funcs<R>::compute_chidot);
-	if (slice_V) som->add_outputter("V", grid_funcs<R>::compute_V);
-	if (slice_V_phys) som->add_outputter("V_phys", grid_funcs<R>::compute_V_phys);
-	if (slice_T_phi) som->add_outputter("T_phi", grid_funcs<R>::compute_T_phi);
-	if (slice_T_chi) som->add_outputter("T_chi", grid_funcs<R>::compute_T_chi);
-	if (slice_T_phi_phys) som->add_outputter("T_phi_phys", grid_funcs<R>::compute_T_phi_phys);
-	if (slice_T_chi_phys) som->add_outputter("T_chi_phys", grid_funcs<R>::compute_T_chi_phys);
-	if (slice_G_phi) som->add_outputter("G_phi", grid_funcs<R>::compute_G_phi);
-	if (slice_G_chi) som->add_outputter("G_chi", grid_funcs<R>::compute_G_chi);
-	if (slice_G_phi_phys) som->add_outputter("G_phi_phys", grid_funcs<R>::compute_G_phi_phys);
-	if (slice_G_chi_phys) som->add_outputter("G_chi_phys", grid_funcs<R>::compute_G_chi_phys);
-	if (slice_G_phi_x) som->add_outputter("G_phi_x", grid_funcs<R>::compute_G_phi_x);
-	if (slice_G_chi_x) som->add_outputter("G_chi_x", grid_funcs<R>::compute_G_chi_x);
-	if (slice_G_phi_phys_x) som->add_outputter("G_phi_phys_x", grid_funcs<R>::compute_G_phi_phys_x);
-	if (slice_G_chi_phys_x) som->add_outputter("G_chi_phys_x", grid_funcs<R>::compute_G_chi_phys_x);
-	if (slice_G_phi_y) som->add_outputter("G_phi_y", grid_funcs<R>::compute_G_phi_y);
-	if (slice_G_chi_y) som->add_outputter("G_chi_y", grid_funcs<R>::compute_G_chi_y);
-	if (slice_G_phi_phys_y) som->add_outputter("G_phi_phys_y", grid_funcs<R>::compute_G_phi_phys_y);
-	if (slice_G_chi_phys_y) som->add_outputter("G_chi_phys_y", grid_funcs<R>::compute_G_chi_phys_y);
-	if (slice_G_phi_z) som->add_outputter("G_phi_z", grid_funcs<R>::compute_G_phi_z);
-	if (slice_G_chi_z) som->add_outputter("G_chi_z", grid_funcs<R>::compute_G_chi_z);
-	if (slice_G_phi_phys_z) som->add_outputter("G_phi_phys_z", grid_funcs<R>::compute_G_phi_phys_z);
-	if (slice_G_chi_phys_z) som->add_outputter("G_chi_phys_z", grid_funcs<R>::compute_G_chi_phys_z);
-	if (slice_grad_phi_phys_x) som->add_outputter("grad_phi_phys_x", grid_funcs<R>::compute_grad_phi_phys_x);
-	if (slice_grad_chi_phys_x) som->add_outputter("grad_chi_phys_x", grid_funcs<R>::compute_grad_chi_phys_x);
-	if (slice_grad_phi_phys_y) som->add_outputter("grad_phi_phys_y", grid_funcs<R>::compute_grad_phi_phys_y);
-	if (slice_grad_chi_phys_y) som->add_outputter("grad_chi_phys_y", grid_funcs<R>::compute_grad_chi_phys_y);
-	if (slice_grad_phi_phys_z) som->add_outputter("grad_phi_phys_z", grid_funcs<R>::compute_grad_phi_phys_z);
-	if (slice_grad_chi_phys_z) som->add_outputter("grad_chi_phys_z", grid_funcs<R>::compute_grad_chi_phys_z);
-	if (slice_rho) som->add_outputter("rho", grid_funcs<R>::compute_rho);
-	if (slice_rho_phys) som->add_outputter("rho_phys", grid_funcs<R>::compute_rho_phys);
-	if (slice_p) som->add_outputter("p", grid_funcs<R>::compute_p);
-	if (slice_p_phys) som->add_outputter("p_phys", grid_funcs<R>::compute_p_phys);
+	gc = new grad_computer<R>(fs, phi, chi);
+	som = new slice_output_manager<R>(fs, ts, phi, chi, phidot, chidot, *gc,
+					  slicedim, slicelength, sliceskip, sliceaverage, sliceflt);
 }
 
 template <typename R>
@@ -845,8 +733,8 @@ void model<R>::set_initial_conditions()
 	// So setting a' depends on f'_pr and vice versa, so we'll iterate to convergence...
 
 	if (!external_H0) {
-		phidot0pr = mp.rescale_A*mp.phidot0;
-		chidot0pr = mp.rescale_A*mp.chidot0;
+		phidot0pr = RESCALE_A*MP_PHIDOT0;
+		chidot0pr = RESCALE_A*MP_CHIDOT0;
 
 		const R adot_thrsh = 1e-14;
 		R adot_prev;
@@ -856,15 +744,15 @@ void model<R>::set_initial_conditions()
 		do {
 			adot_prev = ts.adot;
 
-			R hf = 3. * pow<2>(mp.rescale_A)/(4. * M_PI);
-			R h0norm = 1. / (hf - pow<2>(mp.rescale_r*mp.rescale_A) * (pow<2>(mp.phi0) + pow<2>(mp.chi0)));
+			R hf = 3. * pow<2>(RESCALE_A)/(4. * M_PI);
+			R h0norm = 1. / (hf - pow<2>(RESCALE_R*RESCALE_A) * (pow<2>(MP_PHI0) + pow<2>(MP_CHI0)));
 			for (int s = -1; s <= 1; s += 2) {
 				ts.adot = h0norm * (
-					-mp.rescale_r*pow<2>(mp.rescale_A)*((phidot0pr/mp.rescale_A)*mp.phi0 + (chidot0pr/mp.rescale_A)*mp.chi0) +
+					-RESCALE_R*pow<2>(RESCALE_A)*((phidot0pr/RESCALE_A)*MP_PHI0 + (chidot0pr/RESCALE_A)*MP_CHI0) +
 					s*sqrt(
 						hf * (pow<2>(phidot0pr) + pow<2>(chidot0pr)) +
-						2. * mp.V(mp.rescale_A * mp.phi0, mp.rescale_A * mp.chi0, 1.) *
-							(hf - pow<2>(mp.rescale_r*mp.rescale_A)*(pow<2>(mp.phi0) + pow<2>(mp.chi0)))
+						2. * model_params::V(RESCALE_A * MP_PHI0, RESCALE_A * MP_CHI0, 1.) *
+							(hf - pow<2>(RESCALE_R*RESCALE_A)*(pow<2>(MP_PHI0) + pow<2>(MP_CHI0)))
 					)
 				);
 
@@ -874,8 +762,8 @@ void model<R>::set_initial_conditions()
 			}
 
 			// Assuming here that a = 1.
-			phidot0pr = mp.rescale_A*(mp.phidot0 + mp.rescale_r*ts.adot*mp.phi0);
-			chidot0pr = mp.rescale_A*(mp.chidot0 + mp.rescale_r*ts.adot*mp.chi0);
+			phidot0pr = RESCALE_A*(MP_PHIDOT0 + RESCALE_R*ts.adot*MP_PHI0);
+			chidot0pr = RESCALE_A*(MP_CHIDOT0 + RESCALE_R*ts.adot*MP_CHI0);
 
 			++adot_iters;
 		} while (adot_iters < 2 || fabs(ts.adot - adot_prev) > ts.adot*adot_thrsh);
@@ -883,24 +771,24 @@ void model<R>::set_initial_conditions()
 		cout << "Initial homogeneous adot (to be corrected later) = " << ts.adot << " (converged in " << adot_iters << " iteration(s))" << endl;
 	}
 	else {
-		phidot0pr = mp.rescale_A*(
-			pow(ts.a, mp.rescale_r - mp.rescale_s)*mp.phidot0 +
-			mp.rescale_r*pow(ts.a, mp.rescale_r-mp.rescale_s-1)*ts.adot*mp.phi0
+		phidot0pr = RESCALE_A*(
+			pow(ts.a, RESCALE_R - RESCALE_S)*MP_PHIDOT0 +
+			RESCALE_R*pow(ts.a, RESCALE_R-RESCALE_S-1)*ts.adot*MP_PHI0
 		);
-		chidot0pr = mp.rescale_A*(
-			pow(ts.a, mp.rescale_r - mp.rescale_s)*mp.chidot0 +
-			mp.rescale_r*pow(ts.a, mp.rescale_r-mp.rescale_s-1)*ts.adot*mp.chi0
+		chidot0pr = RESCALE_A*(
+			pow(ts.a, RESCALE_R - RESCALE_S)*MP_CHIDOT0 +
+			RESCALE_R*pow(ts.a, RESCALE_R-RESCALE_S-1)*ts.adot*MP_CHI0
 		);
 	}
 
 	if (!homo_ic_phi || !homo_ic_chi) {
 		initializer<R> *init = (initializer<R> *) new le_style_initializer<R>
-			(fs, mp, phi, phidot, chi, chidot, ts.adot, len0);
+			(fs, phi, phidot, chi, chidot, ts.adot, len0);
 
 		init->initialize();
 
 		if (vvwl) {
-			const R cf = pow(mp.len/(le_init ? len0 : R(1.0)), R(1.5))/pow<3>(2 * M_PI/(mp.len));
+			const R cf = pow(MP_LEN/(le_init ? len0 : R(1.0)), R(1.5))/pow<3>(2 * M_PI/(MP_LEN));
 
 			phi.switch_state(momentum);
 			phidot.switch_state(momentum);
@@ -942,11 +830,11 @@ void model<R>::set_initial_conditions()
 	chidot.divby(ics_scale);
 		
 	// Note that the 0-mode in Fourier space is the sum over all points in position space.
-	phi.mdata[0][0] = mp.rescale_A * pow(ts.a, mp.rescale_r) * fs.total_gridpoints * mp.phi0;
+	phi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * fs.total_gridpoints * MP_PHI0;
 	phi.mdata[0][1] = 0.;
 	phidot.mdata[0][0] = fs.total_gridpoints * phidot0pr;
 	phidot.mdata[0][1] = 0.;
-	chi.mdata[0][0] = mp.rescale_A * pow(ts.a, mp.rescale_r) * fs.total_gridpoints * mp.chi0;
+	chi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * fs.total_gridpoints * MP_CHI0;
 	chi.mdata[0][1] = 0.;
 	chidot.mdata[0][0] = fs.total_gridpoints * chidot0pr;
 	chidot.mdata[0][1] = 0.;
@@ -1015,7 +903,7 @@ void model<R>::evolve(integrator<R> *ig)
 			eo.output(true);
 			// cout << "avg_rho_phys: " << eo.avg_rho_phys << endl;
 			ts.adot = ts.a *
-				sqrt( 8./(3. * pow<2>(mp.rescale_A) * pow(ts.a, 2. * mp.rescale_r)) * M_PI * eo.avg_rho_phys);
+				sqrt( 8./(3. * pow<2>(RESCALE_A) * pow(ts.a, 2. * RESCALE_R)) * M_PI * eo.avg_rho_phys);
 			if (!avg_rho_iters) adot1 = ts.adot;
 			++avg_rho_iters;
 		} while (fabs(eo.avg_rho - R(1.0)) > avg_rho_thrsh);
@@ -1039,7 +927,7 @@ void model<R>::evolve(integrator<R> *ig)
 		// 1/G = (gamma*s + 1)/gamma =>
 		// 1/G = s + 1/gamma =>
 		// 1/gamma = 1/G - s
-		R gamma = 1./(1./mp.pwr_exp_G - mp.rescale_s);
+		R gamma = 1./(1./mp.pwr_exp_G - RESCALE_S);
 		cout << "Effective power-law exponent: " << gamma << endl;
 
 		// gamma = 2/(3(1+alpha)) =>
@@ -1058,7 +946,7 @@ void model<R>::evolve(integrator<R> *ig)
 		}
 
 		if (counter % scale_interval == 0) {
-			scaleof << ts.t << "\t" << mp.rescale_B * ts.physical_time << "\t" <<
+			scaleof << ts.t << "\t" << RESCALE_B * ts.physical_time << "\t" <<
 				ts.a << "\t" << ts.adot/ts.a << "\t" << ts.addot/ts.a << endl;
 			scaleof.flush();
 		}
@@ -1110,29 +998,29 @@ void model<R>::write_info_file()
 	
 	info_file << "N: " << fs.n << endl;
 	info_file << "final time: " << tf << endl;
-	info_file << "gamma_phi: " << mp.gamma_phi << endl;
-	info_file << "gamma_chi: " << mp.gamma_chi << endl;
-	info_file << "lambda_phi: " << mp.lambda_phi << endl;
-	info_file << "lambda_chi: " << mp.lambda_chi << endl;
-	info_file << "m_phi: " << mp.m_phi << endl;
-	info_file << "m_chi: " << mp.m_chi << endl;
-	info_file << "g: " << mp.g << endl;
-	info_file << "monodromy_exp_phi: " << mp.md_e_phi << endl;
-	info_file << "monodromy_exp_chi: " << mp.md_e_chi << endl;
-	info_file << "monodromy_scale_phi: " << mp.md_s_phi << endl;
-	info_file << "monodromy_scale_chi: " << mp.md_s_chi << endl;
-	info_file << "L: " << mp.len << endl;
-	info_file << "phi0: " << mp.phi0 << endl;
-	info_file << "chi0: " << mp.chi0 << endl;
-	info_file << "phidot0: " << mp.phidot0 << endl;
-	info_file << "chidot0: " << mp.chidot0 << endl;
+	info_file << "gamma_phi: " << GAMMA_PHI << endl;
+	info_file << "gamma_chi: " << GAMMA_CHI << endl;
+	info_file << "lambda_phi: " << LAMBDA_PHI << endl;
+	info_file << "lambda_chi: " << LAMBDA_CHI << endl;
+	info_file << "m_phi: " << M_PHI << endl;
+	info_file << "m_chi: " << M_CHI << endl;
+	info_file << "g: " << MP_G << endl;
+	info_file << "monodromy_exp_phi: " << MD_E_PHI << endl;
+	info_file << "monodromy_exp_chi: " << MD_E_CHI << endl;
+	info_file << "monodromy_scale_phi: " << MD_S_PHI << endl;
+	info_file << "monodromy_scale_chi: " << MD_S_CHI << endl;
+	info_file << "L: " << MP_LEN << endl;
+	info_file << "phi0: " << MP_PHI0 << endl;
+	info_file << "chi0: " << MP_CHI0 << endl;
+	info_file << "phidot0: " << MP_PHIDOT0 << endl;
+	info_file << "chidot0: " << MP_CHIDOT0 << endl;
 
 	info_file << endl;
 
-	info_file << "rescale A: " << mp.rescale_A << endl;
-	info_file << "rescale B: " << mp.rescale_B << endl;
-	info_file << "rescale r: " << mp.rescale_r << endl;
-	info_file << "rescale s: " << mp.rescale_s << endl;
+	info_file << "rescale A: " << RESCALE_A << endl;
+	info_file << "rescale B: " << RESCALE_B << endl;
+	info_file << "rescale r: " << RESCALE_R << endl;
+	info_file << "rescale s: " << RESCALE_S << endl;
 	if (mp.pwr_exp) {
 		info_file << "power-law expansion: yes" <<  endl;
 	}

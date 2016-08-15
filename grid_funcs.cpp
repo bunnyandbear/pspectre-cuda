@@ -23,31 +23,14 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "pow.hpp"
-#include "grid_funcs.hpp"
-
-using namespace std;
-
-template <typename R>
-R grid_funcs<R>::compute_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_chi(double a, double chi)
 {
-	return pow(ts.a, -mp.rescale_r) * phi/mp.rescale_A;
+	return pow(a, -RESCALE_R) * chi/RESCALE_A;
 }
 
-template <typename R>
-R grid_funcs<R>::compute_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return pow(ts.a, -mp.rescale_r) * chi/mp.rescale_A;
-}
-
-template <typename R>
-R grid_funcs<R>::compute_phidot(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_phidot(double a, double adot,
+				 double phi, double phidot)
 {
 	// f'_pr = A/B [ a^{r-s} f' + r a^{r-1-s} a' f ] =>
 	// f'_pr/A = a^{r-s} f'/B + r a^{r-1-s} a'/B f =>
@@ -55,348 +38,233 @@ R grid_funcs<R>::compute_phidot(field_size &fs, model_params<R> &mp, time_state<
 	// f'/B = a^{s-r} f'_pr/A - r a^{-1} a'/B f =>
 	// f'/B = a^{s-r} f'_pr/A - r a^{-1-r} a'/B f_pr/A
 
-	return pow(ts.a, mp.rescale_s - mp.rescale_r)*phidot/mp.rescale_A
-		- mp.rescale_r*pow(ts.a, -mp.rescale_r-1)*ts.adot * phi/mp.rescale_A;
+	return pow(a, RESCALE_S - RESCALE_R)*phidot/RESCALE_A
+		- RESCALE_R*pow(a, -RESCALE_R-1)*adot * phi/RESCALE_A;
 }
 
-template <typename R>
-R grid_funcs<R>::compute_chidot(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_chidot(double a, double adot,
+				 double chi, double chidot)
 {
-	return pow(ts.a, mp.rescale_s - mp.rescale_r)*chidot/mp.rescale_A
-		- mp.rescale_r*pow(ts.a, -mp.rescale_r-1)*ts.adot * chi/mp.rescale_A;
+	return pow(a, RESCALE_S - RESCALE_R)*chidot/RESCALE_A
+		- RESCALE_R*pow(a, -RESCALE_R-1)*adot * chi/RESCALE_A;
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_V_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_V(double a, double adot, double phi, double chi)
 {
-	return mp.V(phi, chi, ts.a);
+	return compute_energy_scaling(a, adot) * compute_V_phys(a, phi, chi);
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_V(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_T_phi(double a, double adot, double phi, double phidot)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_V_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) * compute_T_phi_phys(a, adot, phi, phidot);
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_T_phi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_T_chi(double a, double adot, double chi, double chidot)
 {
-	return 0.5 * pow<2>(phidot) - mp.rescale_r * ts.adot/ts.a * phi*phidot +
-			pow<2>(mp.rescale_r * ts.adot/ts.a ) * 0.5 * pow<2>(phi);
+	return compute_energy_scaling(a, adot) * compute_T_chi_phys(a, adot, chi, chidot);
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_T_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_G_phi(double a, double adot, double phigradx, double phigrady, double phigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_T_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) * compute_G_phi_phys(a, phigradx, phigrady, phigradz);
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_T_chi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_G_chi(double a, double adot, double chigradx, double chigrady, double chigradz)
 {
-	return 0.5 * pow<2>(chidot) - mp.rescale_r * ts.adot/ts.a * chi*chidot +
-			pow<2>(mp.rescale_r * ts.adot/ts.a ) * 0.5 * pow<2>(chi);
+	return compute_energy_scaling(a, adot) * compute_G_chi_phys(a, chigradx, chigrady, chigradz);
 }
+*/
 
-template <typename R>
-R grid_funcs<R>::compute_T_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+/*
+__device__ double compute_G_phi_phys_x(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_T_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-template <typename R>
-R grid_funcs<R>::compute_G_phi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(phigradx) + pow<2>(phigrady) + pow<2>(phigradz)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(phigradx)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_phi_x(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_phi_phys_x(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_phys_x(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(chigradx) + pow<2>(chigrady) + pow<2>(chigradz)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(chigradx)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_x(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_chi_phys_x(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_phi_phys_y(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(phigradx)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(phigrady)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_phi_y(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_phi_phys_x(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_phi_phys_y(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_phys_y(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(chigradx)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(chigrady)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_y(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_chi_phys_x(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_chi_phys_y(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_phi_phys_z(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(phigrady)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(phigradz)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_phi_z(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_phi_phys_y(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_phi_phys_z(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_phys_z(R a, R adot,
+				      R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				      R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(chigrady)
+	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (
+		pow2(chigradz)
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_G_chi_z(R a, R adot,
+				 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_chi_phys_y(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+	return compute_energy_scaling(a, adot) *
+		compute_G_chi_phys_z(a, adot, phi, chi, phidot, chidot,
+				     phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_phi_phys_x(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(phigradz)
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		phigradx
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_phi_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_chi_phys_x(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_phi_phys_z(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-template <typename R>
-R grid_funcs<R>::compute_G_chi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return pow(ts.a, -2.*mp.rescale_s - 2.) * 0.5 * (
-			pow<2>(chigradz)
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		chigradx
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_G_chi_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_phi_phys_y(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return compute_energy_scaling(mp, ts) *
-		compute_G_chi_phys_z(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-template <typename R>
-R grid_funcs<R>::compute_grad_phi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			phigradx
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		phigrady
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_grad_chi_phys_x(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_chi_phys_y(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			chigradx
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		chigrady
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_grad_phi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_phi_phys_z(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			phigrady
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		phigradz
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_grad_chi_phys_y(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_grad_chi_phys_z(R a, R adot,
+					 R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+					 R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			chigrady
+	return pow(a, -RESCALE_R)/RESCALE_A * (
+		chigradz
 		);
 }
 
-template <typename R>
-R grid_funcs<R>::compute_grad_phi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_p_phys(R a, R adot,
+				R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+				R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			phigradz
-		);
+	return -compute_V_phys(a, phi, chi) +
+		compute_T_phi_phys(a, adot, phi, phidot) +
+		compute_T_chi_phys(a, adot, chi, chidot) -
+		compute_G_phi_phys(a, phigradx, phigrady, phigradz) -
+		compute_G_chi_phys(a, chigradx, chigrady, chigradz)/3.;
 }
 
-template <typename R>
-R grid_funcs<R>::compute_grad_chi_phys_z(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
+__device__ double compute_p(R a, R adot,
+			   R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
+			   R phigrady, R chigrady, R phigradz, R chigradz)
 {
-	return pow(ts.a, -mp.rescale_r)/mp.rescale_A * (
-			chigradz
-		);
+	return compute_energy_scaling(a, adot) *
+		compute_p_phys(a, adot, phi, chi, phidot, chidot,
+			       phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
 }
-
-template <typename R>
-R grid_funcs<R>::compute_rho_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return compute_V_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_T_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_T_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_G_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_G_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-template <typename R>
-R grid_funcs<R>::compute_rho(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return compute_energy_scaling(mp, ts) *
-		compute_rho_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-template <typename R>
-R grid_funcs<R>::compute_p_phys(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return -compute_V_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_T_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) +
-		compute_T_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz) -
-		compute_G_phi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz)/3. -
-		compute_G_chi_phys(fs, mp, ts, phi, chi, phidot, chidot,
-		phigradx, chigradx, phigrady, chigrady, phigradz, chigradz)/3.;
-}
-
-template <typename R>
-R grid_funcs<R>::compute_p(field_size &fs, model_params<R> &mp, time_state<R> &ts,
-		R phi, R chi, R phidot, R chidot, R phigradx, R chigradx,
-		R phigrady, R chigrady, R phigradz, R chigradz)
-{
-	return compute_energy_scaling(mp, ts) *
-		compute_p_phys(fs, mp, ts, phi, chi, phidot, chidot,
-			phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
-}
-
-// Explicit instantiations
-template struct grid_funcs<double>;
+*/

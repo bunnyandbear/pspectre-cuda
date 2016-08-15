@@ -64,7 +64,7 @@ protected:
 
 protected:
 	field_size fs;
-	model_params<R> mp;
+	model_params mp;
 	time_state<R> ts;
 	bool use_verlet, le_init = true, homo_ic_phi, homo_ic_chi;
 	int seed;

@@ -34,36 +34,32 @@ using namespace std;
  * This is equation 6.5 from the LatticeEasy manual.
  */
 
-#define pow2(x) ((x)*(x))
-#define pow4(x) ((x)*(x)*(x)*(x))
-#define pow6(x) ((x)*(x)*(x)*(x)*(x)*(x))
-__device__ double V(double phi, double chi, double a_t, model_params<double> mp)
+__device__ double V(double phi, double chi, double a_t)
 {
-	double tophys = 1./mp.rescale_A * pow(a_t, -mp.rescale_r);
+	double tophys = 1./RESCALE_A * pow(a_t, -RESCALE_R);
 	double phi_phys = tophys * phi;
 	double chi_phys = tophys * chi;
-	return pow2(mp.rescale_A / mp.rescale_B) * pow(a_t, -2. * mp.rescale_s + 2. * mp.rescale_r) *
+	return pow2(RESCALE_A / RESCALE_B) * pow(a_t, -2. * RESCALE_S + 2. * RESCALE_R) *
 		(
 			(
-				(mp.md_e_phi != 0) ?
-				mp.md_c_phi*pow2(mp.md_s_phi)*(pow(1.0 + pow2(phi_phys/mp.md_s_phi), mp.md_e_phi) - 1.0) :
-				0.5*pow2(mp.m_phi * phi_phys)
+				(MD_E_PHI != 0) ?
+				MD_C_PHI*pow2(MD_S_PHI)*(pow(1.0 + pow2(phi_phys/MD_S_PHI), MD_E_PHI) - 1.0) :
+				0.5*pow2(M_PHI * phi_phys)
 				) +
 			(
-				(mp.md_e_chi != 0) ?
-				mp.md_c_chi*pow2(mp.md_s_chi)*(pow(1.0 + pow2(chi_phys/mp.md_s_chi), mp.md_e_chi) - 1.0) :
-				0.5*pow2(mp.m_chi * chi_phys)
+				(MD_E_CHI != 0) ?
+				MD_C_CHI*pow2(MD_S_CHI)*(pow(1.0 + pow2(chi_phys/MD_S_CHI), MD_E_CHI) - 1.0) :
+				0.5*pow2(M_CHI * chi_phys)
 				) +
-			0.25*mp.lambda_phi*pow4(phi_phys) +
-			0.25*mp.lambda_chi*pow4(chi_phys) +
-			0.5*pow2(mp.g * phi_phys * chi_phys) +
-			mp.gamma_phi*pow6(phi_phys)/6.0 +
-			mp.gamma_chi*pow6(chi_phys)/6.0
+			0.25*LAMBDA_PHI*pow4(phi_phys) +
+			0.25*LAMBDA_CHI*pow4(chi_phys) +
+			0.5*pow2(MP_G * phi_phys * chi_phys) +
+			GAMMA_PHI*pow6(phi_phys)/6.0 +
+			GAMMA_CHI*pow6(chi_phys)/6.0
 			);
 }
 
-__global__ void v_integrator_kernel(model_params<double> mp,
-				    double *phi, double *chi,
+__global__ void v_integrator_kernel(double *phi, double *chi,
 				    double *total_V,
 				    double a_t, int n)
 {
@@ -74,7 +70,7 @@ __global__ void v_integrator_kernel(model_params<double> mp,
 	int idx = z + ldl*(y + n*x);
 	int idx_V = z + n*(y + n*x);
 
-	total_V[idx_V] = V(phi[idx], chi[idx], a_t, mp);
+	total_V[idx_V] = V(phi[idx], chi[idx], a_t);
 }
 
 // Integrate the potential. Returns the average value.
@@ -87,8 +83,7 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	auto total_V_arr = double_array_gpu(fs.n, fs.n, fs.n);
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n, 1);
-	v_integrator_kernel<<<nr_blocks, nr_threads>>>(mp,
-						       phi.data.ptr, chi.data.ptr,
+	v_integrator_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						       total_V_arr.ptr(),
 						       a_t, fs.n);
 	double total_V = total_V_arr.sum();

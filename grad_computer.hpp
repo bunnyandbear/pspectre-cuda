@@ -38,8 +38,8 @@
 template <typename R>
 class grad_computer {
 public:
-	grad_computer(field_size &fs_, model_params<R> &mp_, field<R> &phi_, field<R> &chi_)
-		: fs(fs_), upfs(fs_.n), mp(mp_), phi(phi_), chi(chi_),
+	grad_computer(field_size &fs_, field<R> &phi_, field<R> &chi_)
+		: fs(fs_), upfs(fs_.n), phi(phi_), chi(chi_),
 		phigradx("phigradx"), chigradx("chigradx"),
 		phigrady("phigrady"), chigrady("chigrady"),
 		phigradz("phigradz"), chigradz("chigradz")
@@ -59,7 +59,6 @@ public:
 
 protected:
 	field_size &fs, upfs;
-	model_params<R> &mp;
 	field<R> &phi, &chi;
 	
 public:

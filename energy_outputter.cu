@@ -31,15 +31,15 @@
 #include <sstream>
 #include <iomanip>
 
+double compute_energy_scaling(double a, double adot);
+
 using namespace std;
 
-#define pow2(x) (((double) (x))*((double) (x)))
-
 template <typename R>
-energy_outputter<R>::energy_outputter(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_,
+energy_outputter<R>::energy_outputter(field_size &fs_, model_params &mp_, time_state<R> &ts_,
 	field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_)
 	: fs(fs_), mp(mp_), ts(ts_), phi(phi_), chi(chi_), phidot(phidot_), chidot(chidot_),
-	vi(fs, mp), avg_rho_phys(0.0), avg_rho(0.0)
+	vi(fs), avg_rho_phys(0.0), avg_rho(0.0)
 {
 	of.open("energy.tsv");
 	of << setprecision(30) << scientific;
@@ -124,7 +124,7 @@ void energy_outputter<R>::output(bool no_output)
 		avg_gradient_phi_y_arr.ptr(), avg_gradient_chi_y_arr.ptr(),
 		avg_gradient_phi_z_arr.ptr(), avg_gradient_chi_z_arr.ptr(),
 		avg_ffd_phi_arr.ptr(), avg_ffd_chi_arr.ptr(),
-		fs.n, mp.dp);
+		fs.n, MP_DP);
 
 	double avg_phi_squared = avg_phi_squared_arr.sum();
 	double avg_chi_squared = avg_chi_squared_arr.sum();
@@ -143,11 +143,11 @@ void energy_outputter<R>::output(bool no_output)
 	avg_phidot_squared /= 2*pow2(fs.total_gridpoints);
 	avg_chidot_squared /= 2*pow2(fs.total_gridpoints);
 
-	R fld_fac = 0.5 * pow2(mp.rescale_r) * pow2(ts.adot/ts.a);
+	R fld_fac = 0.5 * pow2(RESCALE_R) * pow2(ts.adot/ts.a);
 	avg_phi_squared *= fld_fac / pow2(fs.total_gridpoints);
 	avg_chi_squared *= fld_fac / pow2(fs.total_gridpoints);
 
-	R grad_fac = 0.5 * pow(ts.a, -2. * mp.rescale_s - 2.);
+	R grad_fac = 0.5 * pow(ts.a, -2. * RESCALE_S - 2.);
 	avg_gradient_phi_x *= grad_fac / pow2(fs.total_gridpoints);
 	avg_gradient_chi_x *= grad_fac / pow2(fs.total_gridpoints);
 	avg_gradient_phi_y *= grad_fac / pow2(fs.total_gridpoints);
@@ -155,7 +155,7 @@ void energy_outputter<R>::output(bool no_output)
 	avg_gradient_phi_z *= grad_fac / pow2(fs.total_gridpoints);
 	avg_gradient_chi_z *= grad_fac / pow2(fs.total_gridpoints);
 	
-	R ffd_fac = -mp.rescale_r * ts.adot/ts.a;
+	R ffd_fac = -RESCALE_R * ts.adot/ts.a;
 	avg_ffd_phi *= ffd_fac / pow2(fs.total_gridpoints);
 	avg_ffd_chi *= ffd_fac / pow2(fs.total_gridpoints);
 
@@ -177,12 +177,12 @@ void energy_outputter<R>::output(bool no_output)
 		avg_ffd_phi + avg_ffd_chi;
 	R avg_w = avg_p_phys/avg_rho_phys;
 
-	const R es = grid_funcs<R>::compute_energy_scaling(mp, ts);
+	const R es = compute_energy_scaling(ts.a, ts.adot);
 	avg_rho = es * avg_rho_phys;
 
 	if (!no_output) {
 		of << setw(10) << setfill('0') <<
-			ts.t << "\t" << mp.rescale_B * ts.physical_time << "\t" <<
+			ts.t << "\t" << RESCALE_B * ts.physical_time << "\t" <<
 			avg_rho_phys << "\t" << avg_rho << "\t" <<
 			es * avg_phidot_squared << "\t" <<
 			es * avg_chidot_squared << "\t" <<

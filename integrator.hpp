@@ -46,7 +46,7 @@ public:
 	virtual void initialize() = 0;
 
 public:
-	static void avg_gradients(field_size &fs, model_params<R> &mp,
+	static void avg_gradients(field_size &fs,
 		field<R> &phi, field<R> &chi,
 		R &avg_gradient_phi, R &avg_gradient_chi);
 };

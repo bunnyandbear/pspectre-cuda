@@ -43,13 +43,13 @@ template <typename R>
 class verlet : public integrator<R>
 {
 public:
-	verlet(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_,
+	verlet(field_size &fs_, model_params &mp_, time_state<R> &ts_,
 		field<R> &phi_, field<R> &phidot_, field<R> &chi_, field<R> &chidot_)
 		: fs(fs_), upfs(fs_.n), mp(mp_), ts(ts_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_),
 		phiddot("phiddot"), phidot_staggered("phidot_staggered"),
 		chiddot("chiddot"), chidot_staggered("chidot_staggered"),
-		nlt(fs_, mp_, ts_), vi(fs_, mp_),
-		addot(0), adot_staggered(0), dptdt(1./mp_.rescale_B), ddptdt(0), dptdt_staggered(0)
+		nlt(fs_, ts_), vi(fs_),
+		addot(0), adot_staggered(0), dptdt(1./RESCALE_B), ddptdt(0), dptdt_staggered(0)
 	{
 		phiddot.construct(upfs);
 		chiddot.construct(upfs);
@@ -64,7 +64,7 @@ public:
 
 protected:
 	field_size &fs, upfs;
-	model_params<R> &mp;
+	model_params &mp;
 	time_state<R> &ts;
 
 	field<R> &phi, &phidot;

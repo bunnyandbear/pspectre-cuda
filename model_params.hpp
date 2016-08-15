@@ -25,7 +25,7 @@
 
 /**
  * @file
- * @brief The physical model parameters.
+ * @brief The physical, static model parameters.
  */
 
 #ifndef MODEL_PARAMS
@@ -39,141 +39,70 @@
 
 #include <cmath>
 
-template <typename R>
-struct rs_init
-{
-	rs_init(R m, R B, R s, R r, R A, const std::string &d)
-		: mag(m), rescale_B(B), rescale_s(s),
-		  rescale_r(r), rescale_A(A), desc(d) {}
+// Monodromy potential: c s^2 ([ 1 + (phi/s)^2 ]^e - 1)
+// = c ( e phi^2 + (1/2) s^{-2} (e^2 - e) phi^4 + (1/6) s^{-4} (e^3 - 3 e^2 + 2 e) phi^6 + ...
 
-	// Order largest first.
-	bool operator < (const rs_init &rs) const
-	{
-		return mag > rs.mag;
-	}
+#define GAMMA_PHI (0)
+#define GAMMA_CHI (0)
+#define LAMBDA_PHI (0)
+#define LAMBDA_CHI (0)
+#define MP_G (0)
+#define M_PHI (0.000022139442217092964)
+#define M_CHI (0)
+#define MD_E_PHI (0.5)
+#define MD_E_CHI (0)
+#define MD_C_PHI (0.5*M_PHI*M_PHI/MD_E_PHI)
+#define MD_C_CHI (0)
+#define MD_S_PHI (0.003989422804014327)
+#define MD_S_CHI (0)
+#define MP_LEN (6.0)
+#define MP_PHI0 (0.08211141279686777)
+#define MP_CHI0 (0)
+#define MP_PHIDOT0 (0.0176648818699687)
+#define MP_CHIDOT0 (0)
+#define RESCALE_A (1/MP_PHI0)
+#define RESCALE_B (M_PHI)
+#define RESCALE_S (0)
+#define RESCALE_R (1.5)
+#define MP_DP (2.*M_PI/MP_LEN)
 
-	R mag;
-	R rescale_B;
-	R rescale_s;
-	R rescale_r;
-	R rescale_A;
-	std::string desc;
-};
+#ifdef DOT0_IN_PLANCK
+#define MP_PHIDOT0 (MP_PHIDOT0 * RESCALE_B)
+#define MP_CHIDOT0 (MP_CHIDOT0 * RESCALE_B)
+#endif
 
-template <typename R>
-inline bool operator < (const rs_init<R> &rs1, const rs_init<R> &rs2)
-{
-	return rs1.mag > rs2.mag;
-}
+/*
+  Below are the defaults that are compatible with DEFROST:
 
-/**
- * @brief Static model parameters.
- */
+  len = 10.0;
+  lambda_phi = 0.0;
+  lambda_chi = 0.0;
+  GAMMA_PHI = 0.0;
+  GAMMA_CHI = 0.0;
+  m_phi = (1./2.e5)/sqrt(8. * M_PI);
+  m_chi = 0.0;
+  g = sqrt(1e4 * 8. * M_PI * pow<2>(m_phi));
+  phi0 = 1.0093430384226378929425913902459/sqrt(8. * M_PI);
+  chi0 = 0.;
+  phidot0 = 0.;
+  chidot0 = 0.;
 
-template <typename R>
+  md_e_phi = 0.0;
+  md_e_chi = 0.0;
+  md_c_phi = 0.0;
+  md_c_chi = 0.0;
+  md_s_phi = 1.0;
+  md_s_chi = 1.0;
+*/
+
 struct model_params
 {
 	model_params()
 	{
 		using namespace std;
-		
-		// The defaults are compatible with DEFROST
-		len = 10.0;
-		lambda_phi = 0.0;
-		lambda_chi = 0.0;
-		gamma_phi = 0.0;
-		gamma_chi = 0.0;
-		m_phi = (1./2.e5)/sqrt(8. * M_PI);
-		m_chi = 0.0;
-		g = sqrt(1e4 * 8. * M_PI * pow<2>(m_phi));
-		phi0 = 1.0093430384226378929425913902459/sqrt(8. * M_PI);
-		chi0 = 0.;
-		phidot0 = 0.;
-		chidot0 = 0.;
-
-		md_e_phi = 0.0;
-		md_e_chi = 0.0;
-		md_c_phi = 0.0;
-		md_c_chi = 0.0;
-		md_s_phi = 1.0;
-		md_s_chi = 1.0;
 
 		pwr_exp = false;
 		pwr_exp_G = 0.0;
-
-		calculate_derived_params();
-	}
-
-	void calculate_derived_params(bool report = false)
-	{
-		using namespace std;
-		
-		dp = 2.*M_PI/len;
-
-		// We assume that either a mass term or a lambda term dominates.
-		R phi2 = m_phi/2.0 * pow<2>(phi0);
-		R chi2 = m_chi/2.0 * pow<2>(chi0);
-
-		R lambda_phi_eff = lambda_phi;
-		R lambda_chi_eff = lambda_chi;
-		R gamma_phi_eff = gamma_phi;
-		R gamma_chi_eff = gamma_chi;
-
-		// Monodromy potential: c s^2 ([ 1 + (phi/s)^2 ]^e - 1)
-		// = c ( e phi^2 + (1/2) s^{-2} (e^2 - e) phi^4 + (1/6) s^{-4} (e^3 - 3 e^2 + 2 e) phi^6 + ... )
-		if (md_e_phi != 0) {
-			md_c_phi = 0.5*pow<2>(m_phi)/md_e_phi;
-
-			lambda_phi_eff += 4.0*md_c_phi*0.5*md_e_phi*(md_e_phi - 1)/pow<2>(md_s_phi);
-			gamma_phi_eff += 6.0*md_c_phi*md_e_phi*(md_e_phi*(md_e_phi - 3) + 2)/(6.0*pow<4>(md_s_phi));
-		}
-		if (md_e_chi != 0) {
-			md_c_chi = 0.5*pow<2>(m_chi)/md_e_chi;
-
-			lambda_chi_eff += 4.0*md_c_chi*0.5*md_e_chi*(md_e_chi - 1)/pow<2>(md_s_chi);
-			gamma_chi_eff += 6.0*md_c_chi*md_e_chi*(md_e_chi*(md_e_chi - 3) + 2)/(6.0*pow<4>(md_s_chi));
-		}
-
-#ifdef FULL_RESCALE
-		R phi4 = lambda_phi_eff/4.0 * pow<4>(phi0);
-		R chi4 = lambda_chi_eff/4.0 * pow<4>(chi0);
-		R phi6 = gamma_phi_eff/6.0 * pow<6>(phi0);
-		R chi6 = gamma_chi_eff/6.0 * pow<6>(chi0);
-#endif
-
-		R phi2mag = fabs(phi2);
-		R chi2mag = fabs(chi2);
-#ifdef FULL_RESCALE
-		R phi4mag = fabs(phi4);
-		R chi4mag = fabs(chi4);
-		R phi6mag = fabs(phi6);
-		R chi6mag = fabs(chi6);
-#endif
-
-		std::set<rs_init<R> > rss;
-		if (phi0 != 0) rss.insert(rs_init<R>(phi2mag, m_phi, 0, 1.5, 1/phi0, "phi^2"));
-		if (chi0 != 0) rss.insert(rs_init<R>(chi2mag, m_chi, 0, 1.5, 1/chi0, "chi^2"));
-#ifdef FULL_RESCALE
-		if (phi0 != 0) rss.insert(rs_init<R>(phi4mag, phi0 * sqrt(fabs(lambda_phi_eff)), -1, 1, 1/phi0, "phi^4"));
-		if (chi0 != 0) rss.insert(rs_init<R>(chi4mag, chi0 * sqrt(fabs(lambda_chi_eff)), -1, 1, 1/chi0, "chi^4"));
-		if (phi0 != 0) rss.insert(rs_init<R>(phi6mag, pow<2>(phi0) * sqrt(fabs(gamma_phi_eff)), -3./2., 3./4., 1/phi0, "phi^6"));
-		if (chi0 != 0) rss.insert(rs_init<R>(chi6mag, pow<2>(chi0) * sqrt(fabs(gamma_chi_eff)), -3./2., 3./4., 1/chi0, "chi^6"));
-#endif
-
-		if (rss.size()) {
-			rescale_B = rss.begin()->rescale_B;
-			rescale_s = rss.begin()->rescale_s;
-			rescale_r = rss.begin()->rescale_r;
-			rescale_A = rss.begin()->rescale_A;
-		}
-		else {
-			rescale_B = 1.0;
-			rescale_s = 0;
-			rescale_r = 0;
-			rescale_A = 1.0;
-		}
-
-		if (report) std::cout << "Initially Dominant Term: " << rss.begin()->desc << std::endl;
 	}
 
 	/**
@@ -182,30 +111,28 @@ struct model_params
 	 * This is equation 6.5 from the LatticeEasy manual.
 	 */
 
-	R V(R phi, R chi, R a_t)
+	__device__ __host__ static double V(double phi, double chi, double a_t)
 	{
-		using namespace std;
-
-		const R tophys = 1./rescale_A * pow(a_t, -rescale_r);
-		const R phi_phys = tophys * phi;
-		const R chi_phys = tophys * chi;
-		return pow<2>(rescale_A / rescale_B) * pow(a_t, -2. * rescale_s + 2. * rescale_r) *
+		const double tophys = 1./RESCALE_A * pow(a_t, -RESCALE_R);
+		const double phi_phys = tophys * phi;
+		const double chi_phys = tophys * chi;
+		return pow2(RESCALE_A / RESCALE_B) * pow(a_t, -2. * RESCALE_S + 2. * RESCALE_R) *
 			(
 				(
-					(md_e_phi != 0) ?
-					md_c_phi*pow<2>(md_s_phi)*(pow(1.0 + pow<2>(phi_phys/md_s_phi), md_e_phi) - 1.0) :
-					0.5*pow<2>(m_phi * phi_phys)
+					(MD_E_PHI != 0) ?
+					MD_C_PHI*pow2(MD_S_PHI)*(pow(1.0 + pow2(phi_phys/MD_S_PHI), MD_E_PHI) - 1.0) :
+					0.5*pow2(M_PHI * phi_phys)
 				) +
 				(
-					(md_e_chi != 0) ?
-					md_c_chi*pow<2>(md_s_chi)*(pow(1.0 + pow<2>(chi_phys/md_s_chi), md_e_chi) - 1.0) :
-					0.5*pow<2>(m_chi * chi_phys)
+					(MD_E_CHI != 0) ?
+					MD_C_CHI*pow2(MD_S_CHI)*(pow(1.0 + pow2(chi_phys/MD_S_CHI), MD_E_CHI) - 1.0) :
+					0.5*pow2(M_CHI * chi_phys)
 				) +
-				0.25*lambda_phi*pow<4>(phi_phys) +
-				0.25*lambda_chi*pow<4>(chi_phys) +
-				0.5*pow<2>(g * phi_phys * chi_phys) +
-				gamma_phi*pow<6>(phi_phys)/6.0 +
-				gamma_chi*pow<6>(chi_phys)/6.0
+				0.25*LAMBDA_PHI*pow4(phi_phys) +
+				0.25*LAMBDA_CHI*pow4(chi_phys) +
+				0.5*pow2(MP_G * phi_phys * chi_phys) +
+				GAMMA_PHI*pow6(phi_phys)/6.0 +
+				GAMMA_CHI*pow6(chi_phys)/6.0
 			);
 	}
 
@@ -214,9 +141,9 @@ struct model_params
 	 * See equation 6.46 and 6.49 of the LatticeEasy manual.
 	 */
 
-	R adoubledot_pwr_exp(R t, R a_t, R adot_t)
+	double adoubledot_pwr_exp(double t, double a_t, double adot_t)
 	{
-		R f = 1./pwr_exp_G * adot_t/a_t * t + 1.;
+		double f = 1./pwr_exp_G * adot_t/a_t * t + 1.;
 		return (pwr_exp_G - 1.)/(pwr_exp_G*pow<2>(f)) * pow<2>(adot_t)/a_t; 
 	}
 
@@ -225,7 +152,8 @@ struct model_params
 	 * See equation 6.26 of the LatticeEasy manual.
 	 */
 
-	R adoubledot(R t, R a_t, R adot_t, R avg_gradient_phi, R avg_gradient_chi, R avg_V)
+	double adoubledot(double t, double a_t, double adot_t,
+			  double avg_gradient_phi, double avg_gradient_chi, double avg_V)
 	{
 		using namespace std;
 
@@ -234,9 +162,9 @@ struct model_params
 		}
 		
 		return (
-			(-rescale_s - 2.)*pow<2>(adot_t)/a_t +
-			8. * M_PI / pow<2>(rescale_A) * pow(a_t, -2.* rescale_s - 2. * rescale_r - 1.)*(
-				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*rescale_s + 2.)*avg_V
+			(-RESCALE_S - 2.)*pow<2>(adot_t)/a_t +
+			8. * M_PI / pow<2>(RESCALE_A) * pow(a_t, -2.* RESCALE_S - 2. * RESCALE_R - 1.)*(
+				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
 			)
 		);
 	}
@@ -245,7 +173,7 @@ struct model_params
 	 * See equation 6.35/6.36 of the LatticeEasy manual.
 	 */
 
-	R adoubledot_staggered(R t, R dt, R a_t, R adot_t, R avg_gradient_phi, R avg_gradient_chi, R avg_V)
+	double adoubledot_staggered(double t, double dt, double a_t, double adot_t, double avg_gradient_phi, double avg_gradient_chi, double avg_V)
 	{
 		using namespace std;
 
@@ -254,25 +182,16 @@ struct model_params
 		}
 		
 		return (
-			-2. * adot_t - 2. * a_t / (dt * (rescale_s + 2.)) *
-			(1. - sqrt(1. + 2. * dt * (rescale_s + 2.) * adot_t/a_t +
-			pow<2>(dt) * (rescale_s + 2.) * 8. * M_PI / pow<2>(rescale_A) * pow(a_t, -2.* rescale_s - 2. * rescale_r - 2.)*(
-				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*rescale_s + 2.)*avg_V
+			-2. * adot_t - 2. * a_t / (dt * (RESCALE_S + 2.)) *
+			(1. - sqrt(1. + 2. * dt * (RESCALE_S + 2.) * adot_t/a_t +
+			pow<2>(dt) * (RESCALE_S + 2.) * 8. * M_PI / pow<2>(RESCALE_A) * pow(a_t, -2.* RESCALE_S - 2. * RESCALE_R - 2.)*(
+				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
 			)))
 		)/dt;
 	}
 
-	R gamma_phi, gamma_chi;
-	R lambda_phi, lambda_chi, g;
-	R m_phi, m_chi;
-	R md_e_phi, md_e_chi, md_c_phi, md_c_chi, md_s_phi, md_s_chi;
-	R len;
-	R phi0, chi0;
-	R phidot0, chidot0;
-	R rescale_A, rescale_B, rescale_s, rescale_r;
-	R dp;
 	bool pwr_exp;
-	R pwr_exp_G;
+	double pwr_exp_G;
 };
 
 #endif // MODEL_PARAMS

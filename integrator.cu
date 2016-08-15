@@ -31,7 +31,6 @@
 
 using namespace std;
 
-#define pow2(p) ((p)*(p))
 __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 				  double *total_gradient_phi, double *total_gradient_chi,
 				  int n, double dp)
@@ -52,9 +51,9 @@ __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 }
 
 template <typename R>
-void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
-	field<R> &phi, field<R> &chi,
-	R &avg_gradient_phi, R &avg_gradient_chi)
+void integrator<R>::avg_gradients(field_size &fs,
+				  field<R> &phi, field<R> &chi,
+				  R &avg_gradient_phi, R &avg_gradient_chi)
 {
 	phi.switch_state(momentum);
 	chi.switch_state(momentum);
@@ -66,7 +65,7 @@ void integrator<R>::avg_gradients(field_size &fs, model_params<R> &mp,
 	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, chi.mdata.ptr,
 						       total_gradient_phi_arr.ptr(),
 						       total_gradient_chi_arr.ptr(),
-						       fs.n, mp.dp);
+						       fs.n, MP_DP);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();

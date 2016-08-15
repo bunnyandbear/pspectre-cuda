@@ -43,14 +43,14 @@ template <typename R>
 class le_style_initializer : public initializer<R>
 {
 public:
-	le_style_initializer(field_size &fs_, model_params<R> &mp_,
+	le_style_initializer(field_size &fs_,
 		field<R> &phi_, field<R> &phidot_, field<R> &chi_, field<R> &chidot_, R adot_, R len0)
-		: fs(fs_), mp(mp_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_), adot(adot_)
+		: fs(fs_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_), adot(adot_)
 	{
 		using namespace std;
 		
-		fluctuation_amplitude = mp_.rescale_A * mp_.rescale_B * fs_.total_gridpoints /
-				(pow(mp_.len/len0, (R) 1.5) * sqrt(2.));
+		fluctuation_amplitude = RESCALE_A * RESCALE_B * fs_.total_gridpoints /
+				(pow(MP_LEN/len0, (R) 1.5) * sqrt(2.));
 	}
 
 public:
@@ -62,7 +62,6 @@ protected:
 
 protected:
 	field_size &fs;
-	model_params<R> &mp;
 	field<R> &phi, &phidot;
 	field<R> &chi, &chidot;
 	R adot;

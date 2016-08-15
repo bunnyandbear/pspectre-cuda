@@ -11,6 +11,12 @@
 #ifndef POW_HPP
 #define POW_HPP
 
+#define pow2(x) (((double) (x))*((double) (x)))
+#define pow3(x) ((x)*(x)*(x))
+#define pow4(x) ((x)*(x)*(x)*(x))
+#define pow5(x) ((x)*(x)*(x)*(x)*(x))
+#define pow6(x) ((x)*(x)*(x)*(x)*(x)*(x))
+
 // This is a modified version of the pow template from:
 // C++ Meta<Programming> Concepts and Results
 // Walter E. Brown, April 2001.

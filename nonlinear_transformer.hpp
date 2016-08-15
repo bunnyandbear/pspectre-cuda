@@ -40,8 +40,8 @@ template <typename R>
 class nonlinear_transformer
 {
 public:
-	nonlinear_transformer(field_size &fs_, model_params<R> &mp_, time_state<R> &ts_)
-		: fs(fs_), upfs(fs_.n), mp(mp_), ts(ts_),
+	nonlinear_transformer(field_size &fs_, time_state<R> &ts_)
+		: fs(fs_), upfs(fs_.n), ts(ts_),
 		phi2chi("phi2chi"), chi2phi("chi2phi"),
 		phi3("phi3"), chi3("chi3"),
 		phi5("phi5"), chi5("chi5")
@@ -49,27 +49,27 @@ public:
 		phi2chi.construct(upfs);
 		chi2phi.construct(upfs);
 		
-		if (mp.lambda_phi != 0.0) {
+		if (LAMBDA_PHI != 0.0) {
 			phi3.construct(upfs);
 		}
 		
-		if (mp.lambda_chi != 0.0) {
+		if (LAMBDA_CHI != 0.0) {
 			chi3.construct(upfs);
 		}
 
-		if (mp.gamma_phi != 0.0) {
+		if (GAMMA_PHI != 0.0) {
 			phi5.construct(upfs);
 		}
 		
-		if (mp.gamma_chi != 0.0) {
+		if (GAMMA_CHI != 0.0) {
 			chi5.construct(upfs);
 		}
 
-		if (mp.md_e_phi != 0.0) {
+		if (MD_E_PHI != 0.0) {
 			phi_md.construct(upfs);
 		}
 
-		if (mp.md_e_chi != 0.0) {
+		if (MD_E_CHI != 0.0) {
 			chi_md.construct(upfs);
 		}
 	}
@@ -80,7 +80,6 @@ public:
 
 protected:
 	field_size &fs, upfs;
-	model_params<R> &mp;
 	time_state<R> &ts;
 
 public:

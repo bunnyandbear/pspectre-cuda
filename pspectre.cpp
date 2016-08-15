@@ -72,6 +72,7 @@
 #include <vector>
 
 #include <iostream>
+#include <fstream>
 
 #include <climits>
 #include <cfloat>
@@ -84,10 +85,6 @@
 
 #include <unistd.h>
 #include <wordexp.h>
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
 using namespace std;
 
@@ -103,11 +100,6 @@ int main(int argc, char *argv[])
 #endif
 
 	print_cuda_info();
-
-#ifdef _OPENMP
-	cout << "Using " << omp_get_max_threads() << " CPU threads." << endl;
-	cout << "Note: when available, we will use both CPU and GPU to speed things up." << endl;
-#endif
 
 	vector<char *> args(argv, argv + argc);
 	bool first_line = true;
@@ -172,6 +164,4 @@ int main(int argc, char *argv[])
 }
 
 // Explicit instantiations
-template struct model_params<double>;
 template struct time_state<double>;
-

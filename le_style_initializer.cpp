@@ -44,7 +44,7 @@ void le_style_initializer<R>::set_mode(fftw_complex *fld, fftw_complex *flddot, 
 	R rms_amplitude, amplitude;
 	R phase1, phase2;
 
-	omega = sqrt(pow<2>(mp.dp)* (pow<2>(px) + pow<2>(py) + pow<2>(pz)) + pow<2>(m_fld_eff));
+	omega = sqrt(pow<2>(MP_DP)* (pow<2>(px) + pow<2>(py) + pow<2>(pz)) + pow<2>(m_fld_eff));
 	if (omega > 0.) {
 		rms_amplitude = fluctuation_amplitude / (sqrt(omega));
 	}
@@ -66,9 +66,9 @@ void le_style_initializer<R>::set_mode(fftw_complex *fld, fftw_complex *flddot, 
 	fld[idx][1] = amplitude * (sin(phase1) + sin(phase2));
 
 	flddot[idx][0] = omega * amplitude * (sin(phase1) - sin(phase2)) +
-		(mp.rescale_r - 1) * adot * fld[idx][0];
+		(RESCALE_R - 1) * adot * fld[idx][0];
 	flddot[idx][1] = -1. * omega * amplitude * (cos(phase1) - cos(phase2)) +
-		(mp.rescale_r - 1) * adot * fld[idx][1];
+		(RESCALE_R - 1) * adot * fld[idx][1];
 
 	if (real) // The 8 corners of the box are real-valued.
 	{
@@ -164,26 +164,26 @@ void le_style_initializer<R>::initialize()
 
 	m_phi_eff = sqrt(
 		(
-			(mp.md_e_phi != 0) ?
+			(MD_E_PHI != 0) ?
 			(
-				2.0*mp.md_c_phi*mp.md_e_phi*pow<2>(mp.md_s_phi)*
-				(pow<2>(mp.md_s_phi) + (2.0*mp.md_e_phi - 1.0)*pow<2>(mp.phi0))*
-				pow(1.0 + pow<2>(mp.phi0/mp.md_s_phi), mp.md_e_phi)
-			)/pow<2>(pow<2>(mp.md_s_phi) + pow<2>(mp.phi0)) :
-			pow<2>(mp.m_phi)
-		) + pow<2>(mp.g*mp.chi0) + 3.0*mp.lambda_phi*pow<2>(mp.phi0) + 5.0*mp.gamma_phi*pow<4>(mp.phi0)
-	)/mp.rescale_B;
+				2.0*MD_C_PHI*MD_E_PHI*pow<2>(MD_S_PHI)*
+				(pow<2>(MD_S_PHI) + (2.0*MD_E_PHI - 1.0)*pow<2>(MP_PHI0))*
+				pow(1.0 + pow<2>(MP_PHI0/MD_S_PHI), MD_E_PHI)
+			)/pow<2>(pow<2>(MD_S_PHI) + pow<2>(MP_PHI0)) :
+			pow<2>(M_PHI)
+		) + pow<2>(MP_G*MP_CHI0) + 3.0*LAMBDA_PHI*pow<2>(MP_PHI0) + 5.0*GAMMA_PHI*pow<4>(MP_PHI0)
+	)/RESCALE_B;
 	m_chi_eff = sqrt(
 		(
-			(mp.md_e_chi != 0) ?
+			(MD_E_CHI != 0) ?
 			(
-				2.0*mp.md_c_chi*mp.md_e_chi*pow<2>(mp.md_s_chi)*
-				(pow<2>(mp.md_s_chi) + (2.0*mp.md_e_chi - 1.0)*pow<2>(mp.chi0))*
-				pow(1.0 + pow<2>(mp.chi0/mp.md_s_chi), mp.md_e_chi)
-			)/pow<2>(pow<2>(mp.md_s_chi) + pow<2>(mp.chi0)) :
-			pow<2>(mp.m_chi)
-		) + pow<2>(mp.g*mp.phi0) + 3.0*mp.lambda_chi*pow<2>(mp.chi0) + 5.0*mp.gamma_chi*pow<4>(mp.chi0)
-	)/mp.rescale_B;
+				2.0*MD_C_CHI*MD_E_CHI*pow<2>(MD_S_CHI)*
+				(pow<2>(MD_S_CHI) + (2.0*MD_E_CHI - 1.0)*pow<2>(MP_CHI0))*
+				pow(1.0 + pow<2>(MP_CHI0/MD_S_CHI), MD_E_CHI)
+			)/pow<2>(pow<2>(MD_S_CHI) + pow<2>(MP_CHI0)) :
+			pow<2>(M_CHI)
+		) + pow<2>(MP_G*MP_PHI0) + 3.0*LAMBDA_CHI*pow<2>(MP_CHI0) + 5.0*GAMMA_CHI*pow<4>(MP_CHI0)
+	)/RESCALE_B;
 
 	initialize_field(phi, phidot, m_phi_eff);
 	initialize_field(chi, chidot, m_chi_eff);

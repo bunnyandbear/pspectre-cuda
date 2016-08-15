@@ -38,25 +38,22 @@ using namespace std;
  * the first-time-derivative term from the second-time-derivative equation.
  */
 
-#define pow2(x) ((x)*(x))
-#define pow4(x) ((x)*(x)*(x)*(x))
 __device__ double dphidotdt(double phi, double chi,
 			    double chi2phi, double phi3,
 			    double phi5, double phi_md,
 			    double a_t, double adot_t,
-			    double addot_t, double mom2,
-			    model_params<double> mp)
+			    double addot_t, double mom2)
 {
-	return -pow(a_t, -2. * mp.rescale_s - 2.) * mom2 * phi +
-		mp.rescale_r * ((mp.rescale_s - mp.rescale_r + 2) * pow2(adot_t/a_t) + addot_t/a_t)*phi -
-		pow(a_t, -2.*mp.rescale_s - 2. * mp.rescale_r)/pow2(mp.rescale_B)*(
+	return -pow(a_t, -2. * RESCALE_S - 2.) * mom2 * phi +
+		RESCALE_R * ((RESCALE_S - RESCALE_R + 2) * pow2(adot_t/a_t) + addot_t/a_t)*phi -
+		pow(a_t, -2.*RESCALE_S - 2. * RESCALE_R)/pow2(RESCALE_B)*(
 			(
-				(mp.md_e_phi != 0) ? pow(a_t, 2. * mp.rescale_r) * phi_md :
-				pow2(mp.m_phi) * pow(a_t, 2. * mp.rescale_r) * phi
+				(MD_E_PHI != 0) ? pow(a_t, 2. * RESCALE_R) * phi_md :
+				pow2(M_PHI) * pow(a_t, 2. * RESCALE_R) * phi
 				) +
-			mp.lambda_phi/pow2(mp.rescale_A) * phi3 +
-			pow2(mp.g/mp.rescale_A)*chi2phi +
-			mp.gamma_phi/pow4(mp.rescale_A) * pow(a_t, -2. * mp.rescale_r) * phi5
+			LAMBDA_PHI/pow2(RESCALE_A) * phi3 +
+			pow2(MP_G/RESCALE_A)*chi2phi +
+			GAMMA_PHI/pow4(RESCALE_A) * pow(a_t, -2. * RESCALE_R) * phi5
 			);
 }
 
@@ -64,24 +61,22 @@ __device__ double dchidotdt(double phi, double chi,
 			    double phi2chi, double chi3,
 			    double chi5, double chi_md,
 			    double a_t, double adot_t,
-			    double addot_t, double mom2,
-			    model_params<double> mp)
+			    double addot_t, double mom2)
 {
-	return -pow(a_t, -2. * mp.rescale_s - 2.) * mom2 * chi +
-		mp.rescale_r * ((mp.rescale_s - mp.rescale_r + 2) * pow2(adot_t/a_t) + addot_t/a_t)*chi -
-		pow(a_t, -2.*mp.rescale_s - 2. * mp.rescale_r)/pow2(mp.rescale_B)*(
+	return -pow(a_t, -2. * RESCALE_S - 2.) * mom2 * chi +
+		RESCALE_R * ((RESCALE_S - RESCALE_R + 2) * pow2(adot_t/a_t) + addot_t/a_t)*chi -
+		pow(a_t, -2.*RESCALE_S - 2. * RESCALE_R)/pow2(RESCALE_B)*(
 			(
-				(mp.md_e_chi != 0) ? pow(a_t, 2. * mp.rescale_r) * chi_md :
-				pow2(mp.m_chi) * pow(a_t, 2. * mp.rescale_r) * chi
+				(MD_E_CHI != 0) ? pow(a_t, 2. * RESCALE_R) * chi_md :
+				pow2(M_CHI) * pow(a_t, 2. * RESCALE_R) * chi
 				) +
-			mp.lambda_chi/pow2(mp.rescale_A) * chi3 +
-			pow2(mp.g/mp.rescale_A)*phi2chi +
-			mp.gamma_chi/pow4(mp.rescale_A) * pow(a_t, -2. * mp.rescale_r) * chi5
+			LAMBDA_CHI/pow2(RESCALE_A) * chi3 +
+			pow2(MP_G/RESCALE_A)*phi2chi +
+			GAMMA_CHI/pow4(RESCALE_A) * pow(a_t, -2. * RESCALE_R) * chi5
 			);
 }
 
-__global__ void verlet_init_kernel(model_params<double> mp,
-				   fftw_complex *phi_p, fftw_complex *chi_p,
+__global__ void verlet_init_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
 				   fftw_complex *chi2phi_p, fftw_complex *phi2chi_p,
 				   fftw_complex *phi3_p, fftw_complex *chi3_p,
 				   fftw_complex *phi5_p, fftw_complex *chi5_p,
@@ -97,31 +92,29 @@ __global__ void verlet_init_kernel(model_params<double> mp,
 	int py = y <= n/2 ? y : y - n;
 	int pz = z;
 	int idx = z + (n/2+1)*(y + n*x);
-	double mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
+	double mom2 = pow2(MP_DP)*(pow2(px) + pow2(py) + pow2(pz));
 
 	#pragma unroll
 	for (int c = 0; c < 2; ++c) {
 		double phi = phi_p[idx][c], chi = chi_p[idx][c],
 			chi2phi = chi2phi_p[idx][c], phi2chi = phi2chi_p[idx][c],
-			phi3 = mp.lambda_phi != 0 ? phi3_p[idx][c] : 0.0,
-			chi3 = mp.lambda_chi != 0 ? chi3_p[idx][c] : 0.0,
-			phi5 = mp.gamma_phi != 0 ? phi5_p[idx][c] : 0.0,
-			chi5 = mp.gamma_chi != 0 ? chi5_p[idx][c] : 0.0,
-			phi_md = mp.md_e_phi != 0 ? phi_md_p[idx][c] : 0.0,
-			chi_md = mp.md_e_chi != 0 ? chi_md_p[idx][c] : 0.0;
+			phi3 = LAMBDA_PHI != 0 ? phi3_p[idx][c] : 0.0,
+			chi3 = LAMBDA_CHI != 0 ? chi3_p[idx][c] : 0.0,
+			phi5 = GAMMA_PHI != 0 ? phi5_p[idx][c] : 0.0,
+			chi5 = GAMMA_CHI != 0 ? chi5_p[idx][c] : 0.0,
+			phi_md = MD_E_PHI != 0 ? phi_md_p[idx][c] : 0.0,
+			chi_md = MD_E_CHI != 0 ? chi_md_p[idx][c] : 0.0;
 
 		phiddot[idx][c] = dphidotdt(phi, chi,
 					    chi2phi, phi3,
 					    phi5, phi_md,
 					    a, adot,
-					    addot, mom2,
-					    mp);
+					    addot, mom2);
 		chiddot[idx][c] = dchidotdt(phi, chi,
 					    phi2chi, chi3,
 					    chi5, chi_md,
 					    a, adot,
-					    addot, mom2,
-					    mp);
+					    addot, mom2);
 	}
 }
 
@@ -130,13 +123,13 @@ void verlet<R>::initialize()
 {
 	R avg_gradient_phi = 0.0, avg_gradient_chi = 0.0;
 
-	integrator<R>::avg_gradients(fs, mp, phi, chi,
-		avg_gradient_phi, avg_gradient_chi);
+	integrator<R>::avg_gradients(fs, phi, chi,
+				     avg_gradient_phi, avg_gradient_chi);
 
 	R avg_V = vi.integrate(phi, chi, ts.a);
 
 	ts.addot = addot = mp.adoubledot(ts.t, ts.a, ts.adot, avg_gradient_phi, avg_gradient_chi, avg_V);
-	ddptdt = -mp.rescale_s/mp.rescale_B * pow(ts.a, -mp.rescale_s - 1.) * ts.adot;
+	ddptdt = -RESCALE_S/RESCALE_B * pow(ts.a, -RESCALE_S - 1.) * ts.adot;
 
 	nlt.transform(phi, chi, ts.a);
 
@@ -151,7 +144,6 @@ void verlet<R>::initialize()
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n/2+1, 1);
 	verlet_init_kernel<<<nr_blocks, nr_threads>>>(
-		mp,
 		phi.mdata.ptr, chi.mdata.ptr,
 		nlt.chi2phi.mdata.ptr, nlt.phi2chi.mdata.ptr,
 		nlt.phi3.mdata.ptr, nlt.chi3.mdata.ptr,
@@ -161,8 +153,7 @@ void verlet<R>::initialize()
 		ts.a, ts.adot, addot, fs.n);
 }
 
-__global__ void verlet_step_kernel(model_params<double> mp,
-				   fftw_complex *phi_p, fftw_complex *chi_p,
+__global__ void verlet_step_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
 				   fftw_complex *phidot_p, fftw_complex *chidot_p,
 				   fftw_complex *chi2phi_p, fftw_complex *phi2chi_p,
 				   fftw_complex *phi3_p, fftw_complex *chi3_p,
@@ -181,31 +172,29 @@ __global__ void verlet_step_kernel(model_params<double> mp,
 	int pz = z;
 	int idx = z + (n/2+1)*(y + n*x);
 
-	double mom2 = pow2(mp.dp)*(pow2(px) + pow2(py) + pow2(pz));
+	double mom2 = pow2(MP_DP)*(pow2(px) + pow2(py) + pow2(pz));
 
 	#pragma unroll
 	for (int c = 0; c < 2; ++c) {
 		double phi = phi_p[idx][c], chi = chi_p[idx][c],
 			chi2phi = chi2phi_p[idx][c], phi2chi = phi2chi_p[idx][c],
-			phi3 = mp.lambda_phi != 0 ? phi3_p[idx][c] : 0.0,
-			chi3 = mp.lambda_chi != 0 ? chi3_p[idx][c] : 0.0,
-			phi5 = mp.gamma_phi != 0 ? phi5_p[idx][c] : 0.0,
-			chi5 = mp.gamma_chi != 0 ? chi5_p[idx][c] : 0.0,
-			phi_md = mp.md_e_phi != 0 ? phi_md_p[idx][c] : 0.0,
-			chi_md = mp.md_e_chi != 0 ? chi_md_p[idx][c] : 0.0;
+			phi3 = LAMBDA_PHI != 0 ? phi3_p[idx][c] : 0.0,
+			chi3 = LAMBDA_CHI != 0 ? chi3_p[idx][c] : 0.0,
+			phi5 = GAMMA_PHI != 0 ? phi5_p[idx][c] : 0.0,
+			chi5 = GAMMA_CHI != 0 ? chi5_p[idx][c] : 0.0,
+			phi_md = MD_E_PHI != 0 ? phi_md_p[idx][c] : 0.0,
+			chi_md = MD_E_CHI != 0 ? chi_md_p[idx][c] : 0.0;
 
 		phiddot[idx][c] = dphidotdt(phi, chi,
 					    chi2phi, phi3,
 					    phi5, phi_md,
 					    a, adot,
-					    addot, mom2,
-					    mp);
+					    addot, mom2);
 		chiddot[idx][c] = dchidotdt(phi, chi,
 					    phi2chi, chi3,
 					    chi5, chi_md,
 					    a, adot,
-					    addot, mom2,
-					    mp);
+					    addot, mom2);
 
 		phidot_p[idx][c] = phidot_staggered[idx][c] + 0.5 * phiddot[idx][c] * dt;
 		chidot_p[idx][c] = chidot_staggered[idx][c] + 0.5 * chiddot[idx][c] * dt;
@@ -273,7 +262,7 @@ void verlet<R>::step()
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
 		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
 		total_gradient_phi_arr.ptr(), total_gradient_chi_arr.ptr(),
-		mp.dp, ts.dt, fs.n);
+		MP_DP, ts.dt, fs.n);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();	
@@ -286,7 +275,7 @@ void verlet<R>::step()
 	ts.addot = addot = mp.adoubledot_staggered(ts.t, ts.dt, ts.a, adot_staggered, avg_gradient_phi, avg_gradient_chi, avg_V);
 	ts.adot = adot_staggered + 0.5 * addot * ts.dt;
 
-	ddptdt = -mp.rescale_s / mp.rescale_B * pow(ts.a, -mp.rescale_s - 1) * ts.adot;
+	ddptdt = -RESCALE_S / RESCALE_B * pow(ts.a, -RESCALE_S - 1) * ts.adot;
 	dptdt = dptdt_staggered + 0.5 * ddptdt * ts.dt;
 
 	nlt.transform(phi, chi, ts.a);
@@ -297,7 +286,6 @@ void verlet<R>::step()
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n/2+1, 1);
 	verlet_step_kernel<<<nr_blocks, nr_threads>>>(
-		mp,
 		phi.mdata.ptr, chi.mdata.ptr,
 		phidot.mdata.ptr, chidot.mdata.ptr,
 		nlt.chi2phi.mdata.ptr, nlt.phi2chi.mdata.ptr,

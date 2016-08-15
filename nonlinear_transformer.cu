@@ -31,21 +31,12 @@ using namespace std;
  * n  *  n  *  2*(n/2+1)
  * BLK(x,y) *  THR(x,1)
  */
-#define pow2(p) ((p)*(p))
-#define pow3(p) ((p)*(p)*(p))
-#define pow5(p) ((p)*(p)*(p)*(p)*(p))
 __global__ void nonlin_trans_kernel(double *phi, double *chi,
 				    double *phi2chi, double *chi2phi,
 				    double *phi_md, double *chi_md,
 				    double *phi3, double *chi3,
 				    double *phi5, double *chi5,
-				    double lambda_phi, double lambda_chi,
-				    double gamma_phi, double gamma_chi,
-				    double md_e_phi, double md_c_phi,
-				    double md_e_chi, double md_c_chi,
-				    double md_s_phi, double md_s_chi,
-				    double a_t, double rescale_A, double rescale_r,
-				    int n)
+				    double a_t, int n)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
@@ -59,34 +50,34 @@ __global__ void nonlin_trans_kernel(double *phi, double *chi,
 	phi2chi[idx] = pow2(p)*c;
 	chi2phi[idx] = pow2(c)*p;
 
-	if (lambda_phi != 0.0) {
+	if (LAMBDA_PHI != 0.0) {
 		phi3[idx] = pow3(p);
 	}
 
-	if (lambda_chi != 0.0) {
+	if (LAMBDA_CHI != 0.0) {
 		chi3[idx] = pow3(c);
 	}
 
-	if (gamma_phi != 0.0) {
+	if (GAMMA_PHI != 0.0) {
 		phi5[idx] = pow5(p);
 	}
 
-	if (gamma_chi != 0.0) {
+	if (GAMMA_CHI != 0.0) {
 		chi5[idx] = pow5(c);
 	}
 
-	if (md_e_phi != 0.0) {
-		phi_md[idx] = 2.0 * md_c_phi * md_e_phi * p *
+	if (MD_E_PHI != 0.0) {
+		phi_md[idx] = 2.0 * MD_C_PHI * MD_E_PHI * p *
 			pow(1.0 +
-			    pow(a_t, -2. * rescale_r) * pow2(p/rescale_A) / pow2(md_s_phi),
-			    md_e_phi - 1.0);
+			    pow(a_t, -2. * RESCALE_R) * pow2(p/RESCALE_A) / pow2(MD_S_PHI),
+			    MD_E_PHI - 1.0);
 	}
 
-	if (md_e_chi != 0.0) {
-		chi_md[idx] = 2.0 * md_c_chi * md_e_chi * p *
+	if (MD_E_CHI != 0.0) {
+		chi_md[idx] = 2.0 * MD_C_CHI * MD_E_CHI * p *
 			pow(1.0 +
-			    pow(a_t, -2. * rescale_r) * pow2(p/rescale_A) / pow2(md_s_chi),
-			    md_e_chi - 1.0);
+			    pow(a_t, -2. * RESCALE_R) * pow2(p/RESCALE_A) / pow2(MD_S_CHI),
+			    MD_E_CHI - 1.0);
 	}
 }
 
@@ -102,32 +93,32 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 	chi2phi.switch_state(uninitialized);
 	chi2phi.switch_state(position);
 	
-	if (mp.lambda_phi != 0.0) {
+	if (LAMBDA_PHI != 0.0) {
 		phi3.switch_state(uninitialized);
 		phi3.switch_state(position);
 	}
 	
-	if (mp.lambda_chi != 0.0) {
+	if (LAMBDA_CHI != 0.0) {
 		chi3.switch_state(uninitialized);
 		chi3.switch_state(position);
 	}
 
-	if (mp.gamma_phi != 0.0) {
+	if (GAMMA_PHI != 0.0) {
 		phi5.switch_state(uninitialized);
 		phi5.switch_state(position);
 	}
 	
-	if (mp.gamma_chi != 0.0) {
+	if (GAMMA_CHI != 0.0) {
 		chi5.switch_state(uninitialized);
 		chi5.switch_state(position);
 	}
 
-	if (mp.md_e_phi != 0.0) {
+	if (MD_E_PHI != 0.0) {
 		phi_md.switch_state(uninitialized);
 		phi_md.switch_state(position);
 	}
 
-	if (mp.md_e_chi != 0.0) {
+	if (MD_E_CHI != 0.0) {
 		chi_md.switch_state(uninitialized);
 		chi_md.switch_state(position);
 	}
@@ -139,38 +130,32 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 						       phi_md.data.ptr, chi_md.data.ptr,
 						       phi3.data.ptr, chi3.data.ptr,
 						       phi5.data.ptr, chi5.data.ptr,
-						       mp.lambda_phi, mp.lambda_chi,
-						       mp.gamma_phi, mp.gamma_chi,
-						       mp.md_e_phi, mp.md_c_phi,
-						       mp.md_e_chi, mp.md_c_chi,
-						       mp.md_s_phi, mp.md_s_chi,
-						       a_t, mp.rescale_A, mp.rescale_r,
-						       fs.n);
+						       a_t, fs.n);
 
 	phi2chi.switch_state(final_state);
 	chi2phi.switch_state(final_state);
 	
-	if (mp.lambda_phi != 0.0) {
+	if (LAMBDA_PHI != 0.0) {
 		phi3.switch_state(final_state);
 	}
 	
-	if (mp.lambda_chi != 0.0) {
+	if (LAMBDA_CHI != 0.0) {
 		chi3.switch_state(final_state);
 	}
 
-	if (mp.gamma_phi != 0.0) {
+	if (GAMMA_PHI != 0.0) {
 		phi5.switch_state(final_state);
 	}
 	
-	if (mp.gamma_chi != 0.0) {
+	if (GAMMA_CHI != 0.0) {
 		chi5.switch_state(final_state);
 	}
 
-	if (mp.md_e_phi != 0.0) {
+	if (MD_E_PHI != 0.0) {
 		phi_md.switch_state(final_state);
 	}
 
-	if (mp.md_e_chi != 0.0) {
+	if (MD_E_CHI != 0.0) {
 		chi_md.switch_state(final_state);
 	}
 }

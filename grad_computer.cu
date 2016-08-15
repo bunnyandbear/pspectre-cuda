@@ -95,7 +95,7 @@ void grad_computer<R>::compute(field_state final_state)
 		phigradx.mdata.ptr, chigradx.mdata.ptr,
 		phigrady.mdata.ptr, chigrady.mdata.ptr,
 		phigradz.mdata.ptr, chigradz.mdata.ptr,
-		fs.n, mp.dp);
+		fs.n, MP_DP);
 
 	phigradx.switch_state(final_state);
 	chigradx.switch_state(final_state);
