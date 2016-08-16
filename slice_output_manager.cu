@@ -29,7 +29,6 @@
 #include "pow.hpp"
 
 #include <cstdio>
-#include <cstring>
 #include <cmath>
 #include <unistd.h>
 #include <sys/types.h>
@@ -142,12 +141,7 @@ static void write_array_to_file(double_array_gpu &arr, const char *field, int id
 	if (p == (caddr_t)(-1)) {
 		perror("write_array_to_file: mmap failed.");
 	} else {
-		double *tmp = (double *) malloc(arr.alloc_size());
-		if (tmp == NULL) {
-			std::cout << "malloc fail" << std::endl;
-		}
-		arr.download(tmp);
-		memcpy(p, tmp, arr.alloc_size());
+		arr.download((double *)p);
 		munmap(p, arr.alloc_size());
 	}
 	close(fd);
