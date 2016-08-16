@@ -136,19 +136,18 @@ __global__ void compute_rho_kernel(double *phi, double *chi,
 static void write_array_to_file(double_array_gpu &arr, const char *field, int idx)
 {
 	char name[32] = {0};
-	snprintf(name, sizeof(name), "%s_%.5d", field, idx);
-	int fd = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	void *p = mmap((caddr_t)0, arr.alloc_size(), PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0);
-	if (p == (caddr_t)(-1)) {
-		perror("write_array_to_file: mmap failed.");
+	snprintf(name, sizeof(name), "%s_%.5d.bin", field, idx);
+	int fd = open(name, O_RDWR | O_CREAT | O_TRUNC);
+	if (fd == -1) {
+		perror("write_array_to_file: open failed.");
 	} else {
-		double *tmp = (double *) malloc(arr.alloc_size());
-		if (tmp == NULL) {
-			std::cout << "malloc fail" << std::endl;
+		double *p = (double *) malloc(arr.alloc_size());
+		if (p == NULL) {
+			std::cout << "write_array_to_file: malloc fail" << std::endl;
 		}
-		arr.download(tmp);
-		memcpy(p, tmp, arr.alloc_size());
-		munmap(p, arr.alloc_size());
+		arr.download(p);
+		pwrite(fd, p, arr.alloc_size(), 0);
+		free(p);
 	}
 	close(fd);
 }
