@@ -54,7 +54,7 @@
 #define MD_C_PHI (0.5*M_PHI*M_PHI/MD_E_PHI)
 #define MD_C_CHI (0)
 #define MD_S_PHI (0.003989422804014327)
-#define MD_S_CHI (0)
+#define MD_S_CHI (1)
 #define MP_LEN (6.0)
 #define MP_PHI0 (0.08211141279686777)
 #define MP_CHI0 (0)
@@ -70,6 +70,8 @@
 #define MP_PHIDOT0 (MP_PHIDOT0 * RESCALE_B)
 #define MP_CHIDOT0 (MP_CHIDOT0 * RESCALE_B)
 #endif
+
+#define BEGIN_OUTPUT_TIME (350)
 
 /*
   Below are the defaults that are compatible with DEFROST:

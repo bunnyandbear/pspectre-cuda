@@ -34,7 +34,7 @@
 
 # The final time in program units
 # 
--T 800.0
+-T 600.0
 
 # Set a parameter value
 # -p gamma_phi=0
@@ -71,12 +71,12 @@
 # -S avg
 
 # Set an output interval
--I all=200
+#-I all=200
 #-I scale=10
-#-I energy=10
+-I energy=200
 #-I spectra=200
-# -I screen=100
-#-I slice=200
+-I screen=100
+-I slice=20
 #-I stats=10
 #-I twoptcorr=1000
 

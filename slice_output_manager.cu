@@ -137,7 +137,7 @@ static void write_array_to_file(double_array_gpu &arr, const char *field, int id
 {
 	char name[32] = {0};
 	snprintf(name, sizeof(name), "%s_%.5d.bin", field, idx);
-	int fd = open(name, O_RDWR | O_CREAT | O_TRUNC);
+	int fd = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1) {
 		perror("write_array_to_file: open failed.");
 	} else {
@@ -155,6 +155,10 @@ static void write_array_to_file(double_array_gpu &arr, const char *field, int id
 template <typename R>
 void slice_output_manager<R>::output()
 {
+	if (ts.physical_time * RESCALE_B < BEGIN_OUTPUT_TIME) {
+		return;
+	}
+
 	gc.compute();
 
 	phi.switch_state(position);
