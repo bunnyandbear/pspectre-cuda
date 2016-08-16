@@ -51,11 +51,6 @@ public:
 	fft_dft_c2r_3d_plan()
 		: plan(0) {}
 	
-	~fft_dft_c2r_3d_plan()
-	{
-		fftw_destroy_plan(plan);
-	}
-	
 public:
 	void construct(int n0, int n1, int n2, complex_t *in, double *out, bool estimate = true)
 	{
@@ -92,11 +87,6 @@ public:
 	
 	fft_dft_r2c_3d_plan()
 		: plan(0) {}
-	
-	~fft_dft_r2c_3d_plan()
-	{
-		fftw_destroy_plan(plan);
-	}
 
 public:
 	void execute()
