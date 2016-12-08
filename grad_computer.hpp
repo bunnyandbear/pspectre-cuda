@@ -34,24 +34,25 @@
 #include "field_size.hpp"
 #include "model_params.hpp"
 #include "field.hpp"
+#include "fft.hpp"
 
 template <typename R>
 class grad_computer {
 public:
-	grad_computer(field_size &fs_, field<R> &phi_, field<R> &chi_)
+	grad_computer(field_size &fs_, field<R> &phi_, field<R> &chi_, fft_worker<R> &fft_plans)
 		: fs(fs_), upfs(fs_.n), phi(phi_), chi(chi_),
 		phigradx("phigradx"), chigradx("chigradx"),
 		phigrady("phigrady"), chigrady("chigrady"),
 		phigradz("phigradz"), chigradz("chigradz")
 	{
-		phigradx.construct(upfs);
-		chigradx.construct(upfs);
+		phigradx.construct(upfs, fft_plans);
+		chigradx.construct(upfs, fft_plans);
 		
-		phigrady.construct(upfs);
-		chigrady.construct(upfs);
+		phigrady.construct(upfs, fft_plans);
+		chigrady.construct(upfs, fft_plans);
 		
-		phigradz.construct(upfs);
-		chigradz.construct(upfs);		
+		phigradz.construct(upfs, fft_plans);
+		chigradz.construct(upfs, fft_plans);
 	}
 
 public:
@@ -68,4 +69,3 @@ public:
 };
 
 #endif // GRAD_COMPUTER_HPP
-

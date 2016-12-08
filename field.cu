@@ -39,10 +39,11 @@ using namespace std;
 void print_memory_usage();
 
 template <typename R>
-void field<R>::construct(field_size &fs_)
+void field<R>::construct(field_size &fs_, fft_worker<R> &fft_plans_)
 {
 	fs = fs_;
 	ldl = 2*(fs.n/2+1);
+	fft_plans = &fft_plans_;
 
 #ifdef DEBUG
 	cout << "\nConstructing field " << (name ? name : "unknown") << endl;
@@ -63,8 +64,8 @@ void field<R>::construct(field_size &fs_)
 	data = gpu_array_accessor_double(raw_ptr);
 	fill0();
 
-	m2p_plan.construct(fs.n, fs.n, fs.n, mdata.ptr, data.ptr, false);
-	p2m_plan.construct(fs.n, fs.n, fs.n, data.ptr, mdata.ptr, false);
+	// construct fft_plans (first time only)
+	fft_plans->construct(fs.n, fs.n, fs.n, data.ptr, mdata.ptr, false);
 }
 
 template <typename R>
@@ -129,10 +130,10 @@ void field<R>::switch_state(field_state state_)
 		state = state_;
 	} else if ((state == position) && (state_ == momentum)) {
 		state = momentum;
-		p2m_plan.execute();
+		fft_plans->execute_p2m(data.ptr, mdata.ptr);
 	} else if ((state == momentum) && (state_ == position)) {
 		state = position;
-		m2p_plan.execute();
+		fft_plans->execute_m2p(mdata.ptr, data.ptr);
 		divby(fs.total_gridpoints);
 	}
 }

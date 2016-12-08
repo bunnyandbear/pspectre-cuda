@@ -677,10 +677,10 @@ model<R>::model(int argc, char *argv[])
 
 	fs.calculate_size_totals();
 
-	phi.construct(fs);
-	phidot.construct(fs);
-	chi.construct(fs);
-	chidot.construct(fs);
+	phi.construct(fs, fft_plans);
+	phidot.construct(fs, fft_plans);
+	chi.construct(fs, fft_plans);
+	chidot.construct(fs, fft_plans);
 
 	char *swd = 0; std::size_t swdl = 1024;
 	do {
@@ -693,7 +693,7 @@ model<R>::model(int argc, char *argv[])
 
 	set_output_directory(odn.c_str());
 
-	gc = new grad_computer<R>(fs, phi, chi);
+	gc = new grad_computer<R>(fs, phi, chi, fft_plans);
 	som = new slice_output_manager<R>(fs, ts, phi, chi, phidot, chidot, *gc,
 					  slicedim, slicelength, sliceskip, sliceaverage, sliceflt);
 }
@@ -982,7 +982,7 @@ void model<R>::run()
 
 	set_initial_conditions();
 	
-	integrator<R> *ig = (integrator<R> *) new verlet<R>(fs, mp, ts, phi, phidot, chi, chidot);
+	integrator<R> *ig = (integrator<R> *) new verlet<R>(fs, mp, ts, phi, phidot, chi, chidot, fft_plans);
 
 	cout << "Beginning field evolution..." << endl;
 	evolve(ig);

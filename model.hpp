@@ -38,6 +38,7 @@
 #include "integrator.hpp"
 #include "slice_output_manager.hpp"
 #include "grad_computer.hpp"
+#include "fft.hpp"
 
 template <typename R>
 class model
@@ -75,6 +76,7 @@ protected:
                 screen_intervals, slice_intervals;
 
 protected:
+	fft_worker<R> fft_plans;
 	field<R> phi, phidot;
 	field<R> chi, chidot;
 	grad_computer<R> *gc;

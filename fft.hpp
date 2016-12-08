@@ -31,80 +31,86 @@
 #ifndef FFT_HPP
 #define FFT_HPP
 
+#include <iostream>
 #include <cufftw.h>
 
+
+void print_memory_usage();
+
+
 template <typename R>
-class fft_dft_c2r_3d_plan {};
+class fft_worker {};
+
 
 template <>
-class fft_dft_c2r_3d_plan<double>
+class fft_worker<double>
 {
 public:
 	typedef fftw_complex complex_t;
 	
-public:
-	fft_dft_c2r_3d_plan(int n0, int n1, int n2, complex_t *in, double *out, bool estimate = true)
+	fft_worker(int n0, int n1, int n2, double *datap, complex_t *datam, bool estimate = true)
 	{
-		construct(n0, n1, n2, in, out, estimate);
+		construct(n0, n1, n2, datap, datam, estimate);
 	}
 	
-	fft_dft_c2r_3d_plan()
-		: plan(0) {}
+	fft_worker()
+		: m2p_plan(0), p2m_plan(0), constructed_(false) {}
 	
-public:
-	void construct(int n0, int n1, int n2, complex_t *in, double *out, bool estimate = true)
+	virtual ~fft_worker()
 	{
-		plan = fftw_plan_dft_c2r_3d(n0, n1, n2, in, out, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}	
-
-	void execute()
-	{
-		fftw_execute(plan);
+		if (constructed_)
+		{
+			// free memory
+			fftw_destroy_plan(m2p_plan);
+			fftw_destroy_plan(p2m_plan);
+			constructed_ = false;
+		}
 	}
 
-	bool constructed() {
-		return plan == 0;
+	void construct(int n0, int n1, int n2, double *datap, complex_t *datam, bool estimate = true)
+	{
+		if (not constructed_)
+		{
+			#ifdef DEBUG
+				std::cout << "\nConstructing fft_worker" << std::endl;
+				std::cout << "Memory usage before creating fft plans (x2):" << std::endl;
+				print_memory_usage();
+			#endif
+
+			// create forward plan
+			p2m_plan = fftw_plan_dft_r2c_3d(n0, n1, n2, datap, datam, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
+
+			// create reverse plan
+			m2p_plan = fftw_plan_dft_c2r_3d(n0, n1, n2, datam, datap, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
+
+			#ifdef DEBUG
+				std::cout << "Memory usage after creating fft plans (x2):" << std::endl;
+				print_memory_usage();
+			#endif
+
+			constructed_ = true;
+		}
+	}
+
+	bool constructed()
+	{
+		return constructed_;
+	}
+
+	void execute_p2m(double *in, complex_t *out)
+	{
+		fftw_execute_dft_r2c(p2m_plan, in, out);
+	}
+
+	void execute_m2p(complex_t *in, double *out)
+	{
+		fftw_execute_dft_c2r(m2p_plan, in, out);
 	}
 
 protected:
-	fftw_plan plan;
-};
-
-template <typename R>
-class fft_dft_r2c_3d_plan {};
-
-template <>
-class fft_dft_r2c_3d_plan<double>
-{
-public:
-	typedef fftw_complex complex_t;
-	
-public:
-	fft_dft_r2c_3d_plan(int n0, int n1, int n2, double *in, complex_t *out, bool estimate = true)
-	{
-		construct(n0, n1, n2, in, out, estimate);
-	}
-	
-	fft_dft_r2c_3d_plan()
-		: plan(0) {}
-
-public:
-	void execute()
-	{
-		fftw_execute(plan);
-	}
-	
-	void construct(int n0, int n1, int n2, double *in, complex_t *out, bool estimate = true)
-	{
-		plan = fftw_plan_dft_r2c_3d(n0, n1, n2, in, out, estimate ? FFTW_ESTIMATE : FFTW_MEASURE);
-	}
-
-	bool constructed() {
-		return plan == 0;
-	}
-
-protected:
-	fftw_plan plan;
+	bool constructed_;
+	fftw_plan m2p_plan;
+	fftw_plan p2m_plan;
 };
 
 #endif // FFT_HPP

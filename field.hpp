@@ -50,10 +50,10 @@ template <typename R>
 class field
 {
 public:
-	field(field_size &fs_, const char *name_ = 0)
+	field(field_size &fs_, fft_worker<R> &fft_plans_, const char *name_ = 0)
 		: state(uninitialized), name(name_), data(0), mdata(0)
 	{
-		construct(fs_);
+		construct(fs_, fft_plans_);
 	}
 	
 	field(const char *name_ = 0)
@@ -62,7 +62,7 @@ public:
 	~field();
 
 public:
-	void construct(field_size &fs_);
+	void construct(field_size &fs_, fft_worker<R> &fft_plans_);
 	void divby(R v);
 	void switch_state(field_state state_);
 	void fill0();
@@ -93,8 +93,7 @@ public:
 	
 protected:
 	field_state state;
-	fft_dft_r2c_3d_plan<R> p2m_plan;
-	fft_dft_c2r_3d_plan<R> m2p_plan;
+	fft_worker<R> *fft_plans;
 
 private:
 	double *raw_ptr;
