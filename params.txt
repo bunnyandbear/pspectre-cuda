@@ -15,7 +15,7 @@
 
 # The number of grid points per side of the box
 # 
--N 128
+-N 256
 
 # The padding factor used for position-space integration
 # -P 2

@@ -25,6 +25,9 @@
 
 #include "reduction_helper.hpp"
 #include "v_integrator.hpp"
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -34,31 +37,6 @@ using namespace std;
  * This is equation 6.5 from the LatticeEasy manual.
  */
 
-__device__ double V(double phi, double chi, double a_t)
-{
-	double tophys = 1./RESCALE_A * pow(a_t, -RESCALE_R);
-	double phi_phys = tophys * phi;
-	double chi_phys = tophys * chi;
-	return pow2(RESCALE_A / RESCALE_B) * pow(a_t, -2. * RESCALE_S + 2. * RESCALE_R) *
-		(
-			(
-				(MD_E_PHI != 0) ?
-				MD_C_PHI*pow2(MD_S_PHI)*(pow(1.0 + pow2(phi_phys/MD_S_PHI), MD_E_PHI) - 1.0) :
-				0.5*pow2(M_PHI * phi_phys)
-				) +
-			(
-				(MD_E_CHI != 0) ?
-				MD_C_CHI*pow2(MD_S_CHI)*(pow(1.0 + pow2(chi_phys/MD_S_CHI), MD_E_CHI) - 1.0) :
-				0.5*pow2(M_CHI * chi_phys)
-				) +
-			0.25*LAMBDA_PHI*pow4(phi_phys) +
-			0.25*LAMBDA_CHI*pow4(chi_phys) +
-			0.5*pow2(MP_G * phi_phys * chi_phys) +
-			GAMMA_PHI*pow6(phi_phys)/6.0 +
-			GAMMA_CHI*pow6(chi_phys)/6.0
-			);
-}
-
 __global__ void v_integrator_kernel(double *phi, double *chi,
 				    double *total_V,
 				    double a_t, int n)
@@ -66,11 +44,15 @@ __global__ void v_integrator_kernel(double *phi, double *chi,
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
+	int coeffx = 2 + 2 * (x & 0x1);
+	int coeffy = 2 + 2 * (y & 0x1);
+	int coeffz = 2 + 2 * (z & 0x1);
 	int ldl = 2*(n/2+1);
 	int idx = z + ldl*(y + n*x);
 	int idx_V = z + n*(y + n*x);
 
-	total_V[idx_V] = V(phi[idx], chi[idx], a_t);
+	total_V[idx_V] = coeffx * coeffy * coeffz *
+		model_params::V(phi[idx], chi[idx], a_t);
 }
 
 // Integrate the potential. Returns the average value.
@@ -80,6 +62,21 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	phi.switch_state(position);
 	chi.switch_state(position);
 
+	ofstream phiout("phiout-v_integrator");
+	phiout << setprecision(30);
+	phiout << scientific;
+
+	for (int x = 0; x < fs.n; x += 8) {
+		for (int y = 0; y < fs.n; y += 8) {
+			for (int z = 0; z < fs.n; z += 8) {
+				int ldl = 2*(fs.n/2+1);
+				int idx = z + ldl*(y + fs.n*x);
+				phiout << phi.data[idx] << endl;
+			}
+		}
+	}
+	exit(0);
+
 	auto total_V_arr = double_array_gpu(fs.n, fs.n, fs.n);
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n, 1);
@@ -88,7 +85,10 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 						       a_t, fs.n);
 	double total_V = total_V_arr.sum();
 
-	return total_V / fs.total_gridpoints;
+	cout << "total_V = " << total_V << endl;
+	cout << "total_gridpoints = " << fs.total_gridpoints << endl;
+
+	return total_V / (3.0 * 3 * 3 * fs.total_gridpoints);
 }
 
 // Explicit instantiations

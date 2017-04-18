@@ -858,6 +858,21 @@ void model<R>::set_initial_conditions()
 		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, fs.n, effpmax, effpmin);
 		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, fs.n, effpmax, effpmin);
 	}
+
+	ofstream phiout("phiout-set_init_condition");
+	phiout << setprecision(30);
+	phiout << scientific;
+
+	for (int x = 0; x < fs.n; x += 8) {
+		for (int y = 0; y < fs.n; y += 8) {
+			for (int z = 0; z < fs.n; z += 8) {
+				int ldl = 2*(fs.n/2+1);
+				int idx = z + ldl*(y + fs.n*x);
+				phiout << phi.data[idx] << endl;
+			}
+		}
+	}
+
 }
 
 /**
@@ -900,8 +915,9 @@ void model<R>::evolve(integrator<R> *ig)
 		const R avg_rho_thrsh = 1e-14;
 		int avg_rho_iters = 0;
 		do {
+			cout << "here" << endl;
 			eo.output(true);
-			// cout << "avg_rho_phys: " << eo.avg_rho_phys << endl;
+			cout << "avg_rho_phys: " << eo.avg_rho_phys << endl;
 			ts.adot = ts.a *
 				sqrt( 8./(3. * pow<2>(RESCALE_A) * pow(ts.a, 2. * RESCALE_R)) * M_PI * eo.avg_rho_phys);
 			if (!avg_rho_iters) adot1 = ts.adot;

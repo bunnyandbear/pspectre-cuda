@@ -87,38 +87,23 @@ field<R>::~field()
 #endif
 }
 
-/* (x*y) * (z)
- * (n^2) * (n/2+1)
- * BLK     THR
- *         NO-PADDING
- */
-__global__ void momentum_divby_kernel(fftw_complex *mdata, double v)
+__global__ void divby_kernel(double *data, double v, int n)
 {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	mdata[idx][0] /= v;
-	mdata[idx][1] /= v;
-}
+	int x = blockIdx.x;
+	int y = blockIdx.y;
+	int z = threadIdx.x;
+	int ldl = 2*(n/2+1);
+	int idx = z + ldl*(y + n*x);
 
-/* (x*y) * (z)
- * (n^2) * (2*(n/2+1))
- * BLK     THR
- *         PADDED from n to (2*(n/2+1))
- */
-__global__ void position_divby_kernel(double *data, double v, int ldl)
-{
-	int idx = ldl * blockIdx.x + threadIdx.x;
 	data[idx] /= v;
 }
 
 template <typename R>
 void field<R>::divby(R v)
 {
-	int n = fs.n;
-	if (state == momentum) {
-		momentum_divby_kernel<<<n*n, n/2+1>>>(mdata.ptr, v);
-	} else if (state == position) {
-		position_divby_kernel<<<n*n, n>>>(data.ptr, v, ldl);
-	}
+	dim3 nr_blocks(fs.n, fs.n);
+	dim3 nr_threads(ldl, 1);
+	divby_kernel<<<nr_blocks, nr_threads>>>(data.ptr, v, fs.n);
 }
 
 template <typename R>
