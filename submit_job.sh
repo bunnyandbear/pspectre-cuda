@@ -7,7 +7,7 @@ batchfile=$(mktemp)
 echo "#!/bin/bash
 #SBATCH -J batch_job_cuda
 #SBATCH -A uoa00436
-#SBATCH --time=00:10:00
+#SBATCH --time=01:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=1G
 #SBATCH --gres=gpu:1
@@ -16,8 +16,8 @@ echo "#!/bin/bash
 #SBATCH --mail-user=cliu712@aucklanduni.ac.nz
 #SBATCH --mail-type=ALL
 
-module load GCC/5.4.0
-module load CUDA/8.0.61
+module load GCC/4.9.2
+module load CUDA/7.5.18
 #srun /bin/bash $DIR/build.sh
 srun $DIR/pspectre @params.txt
 #srun $DIR/pspectre
