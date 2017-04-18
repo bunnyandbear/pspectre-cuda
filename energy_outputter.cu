@@ -93,7 +93,6 @@ template <typename R>
 void energy_outputter<R>::output(bool no_output)
 {
 	R avg_V = vi.integrate(phi, chi, ts.a);
-	cout << "avg_V from integrator: " << avg_V << endl;
 	
 	phi.switch_state(momentum);
 	chi.switch_state(momentum);
@@ -180,17 +179,6 @@ void energy_outputter<R>::output(bool no_output)
 
 	const R es = compute_energy_scaling(ts.a, ts.adot);
 	avg_rho = es * avg_rho_phys;
-
-	cout << "Energy scaling: " << es << endl;
-	cout << "avg_rho = " << avg_rho << endl;
-	cout << "avg_V = " << avg_V << endl;
-	cout << "avg_phi_squared = " << avg_phi_squared << endl;
-	cout << "avg_gradient_phi_x = " << avg_gradient_phi_x << endl;
-	cout << "avg_ffd_phi = " << avg_ffd_phi << endl;
-	cout << "avg_phidot_squared = " << avg_phidot_squared << endl;
-	cout << "avg_rho_phys = " << avg_rho_phys << endl;
-	cout << "avg_p_phys = " << avg_p_phys << endl;
-	cout << "avg_w = " << avg_w << endl;
 
 	if (!no_output) {
 		of << setw(10) << setfill('0') <<

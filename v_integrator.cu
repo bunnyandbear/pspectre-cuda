@@ -62,21 +62,6 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	phi.switch_state(position);
 	chi.switch_state(position);
 
-	ofstream phiout("phiout-v_integrator");
-	phiout << setprecision(30);
-	phiout << scientific;
-
-	for (int x = 0; x < fs.n; x += 8) {
-		for (int y = 0; y < fs.n; y += 8) {
-			for (int z = 0; z < fs.n; z += 8) {
-				int ldl = 2*(fs.n/2+1);
-				int idx = z + ldl*(y + fs.n*x);
-				phiout << phi.data[idx] << endl;
-			}
-		}
-	}
-	exit(0);
-
 	auto total_V_arr = double_array_gpu(fs.n, fs.n, fs.n);
 	dim3 nr_blocks(fs.n, fs.n);
 	dim3 nr_threads(fs.n, 1);
@@ -84,9 +69,6 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 						       total_V_arr.ptr(),
 						       a_t, fs.n);
 	double total_V = total_V_arr.sum();
-
-	cout << "total_V = " << total_V << endl;
-	cout << "total_gridpoints = " << fs.total_gridpoints << endl;
 
 	return total_V / (3.0 * 3 * 3 * fs.total_gridpoints);
 }
