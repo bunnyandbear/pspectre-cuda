@@ -52,13 +52,13 @@ template <typename R>
 class field
 {
 public:
-	field(fft_worker<R> &fft_plans_, const char *name_ = 0)
+	field(fft_worker<R> &fft_plans_, const char *name_)
 		: state(uninitialized), name(name_), data(0), mdata(0)
 	{
 		construct(fft_plans_);
 	}
 	
-	field(const char *name_ = 0)
+	field(const char *name_)
 		: ldl(0), state(uninitialized), name(name_), data(0), mdata(0) {};
 
 	~field();

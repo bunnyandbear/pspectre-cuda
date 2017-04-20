@@ -42,9 +42,10 @@ class nonlinear_transformer
 public:
 	nonlinear_transformer(time_state<R> &ts_, fft_worker<R> &fft_plans)
 		: ts(ts_),
-		phi2chi("phi2chi"), chi2phi("chi2phi"),
-		phi3("phi3"), chi3("chi3"),
-		phi5("phi5"), chi5("chi5")
+		  phi2chi("phi2chi"), chi2phi("chi2phi"),
+		  phi3("phi3"), chi3("chi3"),
+		  phi5("phi5"), chi5("chi5"),
+		  phi_md("phi_md"), chi_md("chi_md")
 	{
 		phi2chi.construct(fft_plans);
 		chi2phi.construct(fft_plans);
