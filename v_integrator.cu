@@ -37,7 +37,7 @@ using namespace std;
  * This is equation 6.5 from the LatticeEasy manual.
  */
 
-__global__ void v_integrator_kernel(double *phi, double *chi,
+__global__ void v_integrator_kernel(double *phi, IF_CHI_ARG(double *chi,)
 				    double *total_V,
 				    double a_t)
 {
@@ -52,20 +52,21 @@ __global__ void v_integrator_kernel(double *phi, double *chi,
 	int idx_V = z + NGRIDSIZE*(y + NGRIDSIZE*x);
 
 	total_V[idx_V] = coeffx * coeffy * coeffz *
-		model_params::V(phi[idx], chi[idx], a_t);
+		model_params::V(phi[idx], IF_CHI_ARG(chi[idx],) a_t);
 }
 
 // Integrate the potential. Returns the average value.
 template <typename R>
-R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
+R v_integrator<R>::integrate(field<R> &phi, IF_CHI_ARG(field<R> &chi,) R a_t)
 {
 	phi.switch_state(position);
-	chi.switch_state(position);
+	IF_CHI(chi.switch_state(position));
 
 	auto total_V_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_threads(NGRIDSIZE, 1);
-	v_integrator_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
+	v_integrator_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr,
+						       IF_CHI_ARG(chi.data.ptr,)
 						       total_V_arr.ptr(),
 						       a_t);
 	double total_V = total_V_arr.sum();

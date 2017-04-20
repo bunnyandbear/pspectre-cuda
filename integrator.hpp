@@ -45,8 +45,8 @@ public:
 	virtual void initialize() = 0;
 
 public:
-	static void avg_gradients(field<R> &phi, field<R> &chi,
-		R &avg_gradient_phi, R &avg_gradient_chi);
+	static void avg_gradients(field<R> &phi, IF_CHI_ARG(field<R> &chi,)
+				  R &avg_gradient_phi IF_CHI_ARG(,R &avg_gradient_chi));
 };
 
 #endif // INTEGRATOR_HPP

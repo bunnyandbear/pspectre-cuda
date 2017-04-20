@@ -47,7 +47,8 @@ template <typename R>
 class energy_outputter {
 public:
 	energy_outputter(model_params &mp_, time_state<R> &ts_,
-		field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_);
+			 field<R> &phi_, IF_CHI_ARG(field<R> &chi_,)
+			 field<R> &phidot_ IF_CHI_ARG(, field<R> &chidot_));
 
 public:
 	/** 
@@ -61,8 +62,10 @@ public:
 protected:
 	model_params &mp;
 	time_state<R> &ts;
-	field<R> &phi, &chi;
-	field<R> &phidot, &chidot;
+	field<R> &phi;
+	IF_CHI(field<R> &chi;)
+	field<R> &phidot;
+	IF_CHI(field<R> &chidot;)
 	v_integrator<R> vi;
 	std::ofstream of;
 

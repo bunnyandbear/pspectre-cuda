@@ -41,51 +41,48 @@ class nonlinear_transformer
 {
 public:
 	nonlinear_transformer(time_state<R> &ts_, fft_worker<R> &fft_plans)
-		: ts(ts_),
-		phi2chi("phi2chi"), chi2phi("chi2phi"),
-		phi3("phi3"), chi3("chi3"),
-		phi5("phi5"), chi5("chi5")
-	{
-		phi2chi.construct(fft_plans);
-		chi2phi.construct(fft_plans);
-		
-		if (LAMBDA_PHI != 0.0) {
-			phi3.construct(fft_plans);
-		}
-		
-		if (LAMBDA_CHI != 0.0) {
-			chi3.construct(fft_plans);
-		}
+		: ts(ts_)
+		  IF_CHI_ARG(,phi2chi("phi2chi"))
+		  IF_CHI_ARG(,chi2phi("chi2phi"))
+		IF_PHI3_ARG(,phi3("phi3"))
+		IF_CHI3_ARG(,chi3("chi3"))
+		IF_PHI5_ARG(,phi5("phi5"))
+		IF_CHI5_ARG(,chi5("chi5"))
+		IF_MD_PHI_ARG(,phi_md("phi_md"))
+		IF_MD_CHI_ARG(,chi_md("chi_md")) {
 
-		if (GAMMA_PHI != 0.0) {
-			phi5.construct(fft_plans);
-		}
+		IF_CHI(phi2chi.construct(fft_plans);
+		       chi2phi.construct(fft_plans));
 		
-		if (GAMMA_CHI != 0.0) {
-			chi5.construct(fft_plans);
-		}
+		IF_PHI3(phi3.construct(fft_plans));
 
-		if (MD_E_PHI != 0.0) {
-			phi_md.construct(fft_plans);
-		}
+		IF_CHI3(chi3.construct(fft_plans));
 
-		if (MD_E_CHI != 0.0) {
-			chi_md.construct(fft_plans);
-		}
+		IF_PHI5(phi5.construct(fft_plans));
+		
+		IF_CHI5(chi5.construct(fft_plans));
+
+		IF_MD_PHI(phi_md.construct(fft_plans));
+
+		IF_MD_CHI(chi_md.construct(fft_plans));
 	}
 
 public:	
-	void transform(field<R> &phi, field<R> &chi, R a_t,
-		field_state final_state = momentum);
+	void transform(field<R> &phi, IF_CHI_ARG(field<R> &chi,) R a_t,
+		       field_state final_state = momentum);
 
 protected:
 	time_state<R> &ts;
 
 public:
-	field<R> phi2chi, chi2phi;
-	field<R> phi3, chi3;
-	field<R> phi5, chi5;
-	field<R> phi_md, chi_md;
+	IF_CHI(field<R> phi2chi;)
+	IF_CHI(field<R> chi2phi;)
+	IF_PHI3(field<R> phi3;)
+	IF_CHI3(field<R> chi3;)
+	IF_PHI5(field<R> phi5;)
+	IF_CHI5(field<R> chi5;)
+	IF_MD_PHI(field<R> phi_md;)
+	IF_MD_CHI(field<R> chi_md;)
 };
 
 #endif // NONLINEAR_TRANSFORMER_HPP

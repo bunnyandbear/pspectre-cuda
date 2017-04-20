@@ -44,19 +44,24 @@ class verlet : public integrator<R>
 {
 public:
 	verlet(model_params &mp_, time_state<R> &ts_,
-		field<R> &phi_, field<R> &phidot_, field<R> &chi_, field<R> &chidot_, fft_worker<R> &fft_plans)
-		: mp(mp_), ts(ts_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_),
+	       field<R> &phi_, field<R> &phidot_,
+	       IF_CHI_ARG(field<R> &chi_,)
+	       IF_CHI_ARG(field<R> &chidot_,)
+	       fft_worker<R> &fft_plans)
+		: mp(mp_), ts(ts_), phi(phi_), phidot(phidot_), IF_CHI_ARG(chi(chi_),)
+		  IF_CHI_ARG(chidot(chidot_),)
 		phiddot("phiddot"), phidot_staggered("phidot_staggered"),
-		chiddot("chiddot"), chidot_staggered("chidot_staggered"),
+		IF_CHI_ARG(chiddot("chiddot"),)
+		IF_CHI_ARG(chidot_staggered("chidot_staggered"),)
 		nlt(ts_, fft_plans), vi(),
 		addot(0), adot_staggered(0), dptdt(1./RESCALE_B), ddptdt(0), dptdt_staggered(0)
-	{
-		phiddot.construct(fft_plans);
-		chiddot.construct(fft_plans);
-		
-		phidot_staggered.construct(fft_plans);
-		chidot_staggered.construct(fft_plans);
-	}
+		{
+			phiddot.construct(fft_plans);
+			phidot_staggered.construct(fft_plans);
+
+			IF_CHI(chiddot.construct(fft_plans);
+			       chidot_staggered.construct(fft_plans));
+		}
 
 public:	
 	virtual void step();
@@ -66,10 +71,11 @@ protected:
 	model_params &mp;
 	time_state<R> &ts;
 
-	field<R> &phi, &phidot;
-	field<R> &chi, &chidot;
-	field<R> phiddot, phidot_staggered;
-	field<R> chiddot, chidot_staggered;
+	field<R> &phi, &phidot, phiddot, phidot_staggered;
+	IF_CHI(field<R> &chi;
+	       field<R> &chidot;
+	       field<R> chiddot;
+	       field<R> chidot_staggered;)
 	nonlinear_transformer<R> nlt;
 	v_integrator<R> vi;
 	R addot, adot_staggered;

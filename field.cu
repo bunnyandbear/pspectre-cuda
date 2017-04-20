@@ -45,7 +45,8 @@ void field<R>::construct(fft_worker<R> &fft_plans_)
 	fft_plans = &fft_plans_;
 
 #ifdef DEBUG
-	cout << "\nConstructing field " << (name ? name : "unknown") << endl;
+	cout << "\nConstructing field "
+	     << (name ? name : "NULL POINTER! NAUGHTY PROGRAMMER! SPANK! SPANK! SPANK!") << endl;
 	cout << "Number of grid points: " << NGRIDSIZE << endl;
 	cout << "Memory usage before cudaMalloc:" << endl;
 	print_memory_usage();

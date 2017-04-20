@@ -48,29 +48,103 @@
 // Monodromy potential: c s^2 ([ 1 + (phi/s)^2 ]^e - 1)
 // = c ( e phi^2 + (1/2) s^{-2} (e^2 - e) phi^4 + (1/6) s^{-4} (e^3 - 3 e^2 + 2 e) phi^6 + ...
 
-#define GAMMA_PHI (0)
-#define GAMMA_CHI (0)
-#define LAMBDA_PHI (0)
-#define LAMBDA_CHI (0)
-#define MP_G (0)
 #define M_PHI (0.000022139442217092964)
-#define M_CHI (0)
-#define MD_E_PHI (0.5)
-#define MD_E_CHI (0)
-#define MD_C_PHI (0.5*M_PHI*M_PHI/MD_E_PHI)
-#define MD_C_CHI (0)
-#define MD_S_PHI (0.003989422804014327)
-#define MD_S_CHI (1)
 #define MP_LEN (6.0)
 #define MP_PHI0 (0.08211141279686777)
-#define MP_CHI0 (0)
 #define MP_PHIDOT0 (0.0176648818699687)
-#define MP_CHIDOT0 (0)
 #define RESCALE_A (1/MP_PHI0)
 #define RESCALE_B (M_PHI)
 #define RESCALE_S (0)
 #define RESCALE_R (1.5)
 #define MP_DP (2.*M_PI/MP_LEN)
+
+#define ENABLE_PHI3	(0)
+#if ENABLE_PHI3 == 0
+#define IF_PHI3(x)
+#define IF_PHI3_ARG(x,y)
+#else
+#define IF_PHI3(x)	x
+#define IF_PHI3_ARG(x,y) x,y
+#define LAMBDA_PHI	(0)
+#endif	// ENABLE_PHI3
+
+#define ENABLE_PHI5	(0)
+#if ENABLE_PHI5 == 0
+#define IF_PHI5(x)
+#define IF_PHI5_ARG(x,y)
+#else
+#define IF_PHI5(x)	x
+#define IF_PHI5_ARG(x,y) x,y
+#define GAMMA_PHI	(0)
+#endif	// ENABLE_PHI5
+
+#define ENABLE_MD_PHI	(1)
+#if ENABLE_MD_PHI == 0
+#define IF_MD_PHI(x)
+#define IF_NOT_MD_PHI(x) x
+#define IF_MD_PHI_ARG(x,y)
+#else
+#define IF_MD_PHI(x)	x
+#define IF_NOT_MD_PHI(x)
+#define IF_MD_PHI_ARG(x,y) x,y
+#define MD_E_PHI	(0.5)
+#define MD_C_PHI	(0.5* M_PHI * M_PHI / MD_E_PHI)
+#define MD_S_PHI	(0.003989422804014327)
+#endif	// ENABLE_MD_PHI
+
+#define ENABLE_CHI	(0)
+#if ENABLE_CHI == 0
+#define IF_CHI(x)
+#define IF_CHI_ARG(x,y)
+#define IF_CHI3(x)
+#define IF_CHI3_ARG(x,y)
+#define IF_CHI5(x)
+#define IF_CHI5_ARG(x,y)
+#define IF_MD_CHI(x)
+#define IF_MD_CHI_ARG(x,y)
+#else
+#define IF_CHI(x)	x
+#define IF_CHI_ARG(x,y) x,y
+#define MP_G		(0)
+#define M_CHI		(0)
+#define MP_CHI0		(0)
+#define MP_CHIDOT0	(0)
+
+#define ENABLE_CHI3	(0)
+#if ENABLE_CHI3 == 0
+#define IF_CHI3(x)
+#define IF_CHI3_ARG(x,y)
+#else
+#define IF_CHI3(x)	x
+#define IF_CHI3_ARG(x,y) x,y
+#define LAMBDA_CHI	(0)
+#endif	// ENABLE_CHI3
+
+#define ENABLE_CHI5	(0)
+#if ENABLE_CHI5 == 0
+#define IF_CHI5(x)
+#define IF_CHI5_ARG(x,y)
+#else
+#define IF_CHI5(x)	x
+#define IF_CHI5_ARG(x,y) x,y
+#define GAMMA_CHI	(0)
+#endif	// ENABLE_CHI5
+
+#define ENABLE_MD_CHI	(0)
+#if ENABLE_MD_CHI == 0
+#define IF_MD_CHI(x)
+#define IF_NOT_MD_CHI(x) x
+#define IF_MD_CHI_ARG(x,y)
+#else
+#define IF_MD_CHI(x)	x
+#define IF_NOT_MD_CHI(x)
+#define IF_MD_CHI_ARG(x,y) x,y
+#define MD_E_CHI	(0)
+#define MD_C_CHI	(0)
+#define MD_S_CHI	(1)
+#endif	// ENABLE_MD_CHI
+
+#endif	// ENABLE_CHI
 
 #ifdef DOT0_IN_PLANCK
 #define MP_PHIDOT0 (MP_PHIDOT0 * RESCALE_B)
@@ -119,29 +193,27 @@ struct model_params
 	 * This is equation 6.5 from the LatticeEasy manual.
 	 */
 
-	__device__ __host__ static double V(double phi, double chi, double a_t)
+	__device__ __host__ static double V(double phi, IF_CHI_ARG(double chi,) double a_t)
 	{
 		const double tophys = 1./RESCALE_A * pow(a_t, -RESCALE_R);
 		const double phi_phys = tophys * phi;
-		const double chi_phys = tophys * chi;
-		return pow2(RESCALE_A / RESCALE_B) * pow(a_t, -2. * RESCALE_S + 2. * RESCALE_R) *
-			(
-				(
-					(MD_E_PHI != 0) ?
-					MD_C_PHI*pow2(MD_S_PHI)*(pow(1.0 + pow2(phi_phys/MD_S_PHI), MD_E_PHI) - 1.0) :
-					0.5*pow2(M_PHI * phi_phys)
-				) +
-				(
-					(MD_E_CHI != 0) ?
-					MD_C_CHI*pow2(MD_S_CHI)*(pow(1.0 + pow2(chi_phys/MD_S_CHI), MD_E_CHI) - 1.0) :
-					0.5*pow2(M_CHI * chi_phys)
-				) +
-				0.25*LAMBDA_PHI*pow4(phi_phys) +
-				0.25*LAMBDA_CHI*pow4(chi_phys) +
-				0.5*pow2(MP_G * phi_phys * chi_phys) +
-				GAMMA_PHI*pow6(phi_phys)/6.0 +
-				GAMMA_CHI*pow6(chi_phys)/6.0
+		const double md_phi = 
+			IF_MD_PHI(MD_C_PHI * pow2(MD_S_PHI) *
+				  (pow(1.0 + pow2(phi_phys / MD_S_PHI), MD_E_PHI) - 1.0))
+			IF_NOT_MD_PHI(0.5 * pow2(M_PHI * phi_phys));
+		IF_CHI(const double chi_phys = tophys * chi;
+		       const double md_chi = 
+		       IF_MD_CHI(MD_C_CHI * pow2(MD_S_CHI) *
+				 (pow(1.0 + pow2(chi_phys / MD_S_CHI), MD_E_CHI) - 1.0))
+		       IF_NOT_MD_CHI(0.5 * pow2(M_CHI * chi_phys))
 			);
+		return pow2(RESCALE_A / RESCALE_B) * pow(a_t, -2. * RESCALE_S + 2. * RESCALE_R) *
+			(md_phi IF_CHI(+ md_chi)
+			 IF_PHI3(+ 0.25*LAMBDA_PHI*pow4(phi_phys))
+			 IF_CHI3(+ 0.25*LAMBDA_CHI*pow4(chi_phys))
+			 IF_CHI(+ 0.5*pow2(MP_G * phi_phys * chi_phys))
+			 IF_PHI5(+ GAMMA_PHI*pow6(phi_phys)/6.0)
+			 IF_CHI5(+ GAMMA_CHI*pow6(chi_phys)/6.0));
 	}
 
 	/*
@@ -161,7 +233,7 @@ struct model_params
 	 */
 
 	double adoubledot(double t, double a_t, double adot_t,
-			  double avg_gradient_phi, double avg_gradient_chi, double avg_V)
+			  double avg_gradient_phi, IF_CHI_ARG(double avg_gradient_chi,) double avg_V)
 	{
 		using namespace std;
 
@@ -172,7 +244,7 @@ struct model_params
 		return (
 			(-RESCALE_S - 2.)*pow<2>(adot_t)/a_t +
 			8. * M_PI / pow<2>(RESCALE_A) * pow(a_t, -2.* RESCALE_S - 2. * RESCALE_R - 1.)*(
-				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
+				1./3. * (avg_gradient_phi IF_CHI(+ avg_gradient_chi)) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
 			)
 		);
 	}
@@ -181,7 +253,8 @@ struct model_params
 	 * See equation 6.35/6.36 of the LatticeEasy manual.
 	 */
 
-	double adoubledot_staggered(double t, double dt, double a_t, double adot_t, double avg_gradient_phi, double avg_gradient_chi, double avg_V)
+	double adoubledot_staggered(double t, double dt, double a_t, double adot_t,
+				    double avg_gradient_phi, IF_CHI_ARG(double avg_gradient_chi,) double avg_V)
 	{
 		using namespace std;
 
@@ -193,7 +266,7 @@ struct model_params
 			-2. * adot_t - 2. * a_t / (dt * (RESCALE_S + 2.)) *
 			(1. - sqrt(1. + 2. * dt * (RESCALE_S + 2.) * adot_t/a_t +
 			pow<2>(dt) * (RESCALE_S + 2.) * 8. * M_PI / pow<2>(RESCALE_A) * pow(a_t, -2.* RESCALE_S - 2. * RESCALE_R - 2.)*(
-				1./3. * (avg_gradient_phi + avg_gradient_chi) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
+				1./3. * (avg_gradient_phi IF_CHI(+ avg_gradient_chi)) + pow(a_t, 2*RESCALE_S + 2.)*avg_V
 			)))
 		)/dt;
 	}

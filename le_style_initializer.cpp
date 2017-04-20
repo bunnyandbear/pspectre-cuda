@@ -159,33 +159,29 @@ void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &fldd
 template <typename R>
 void le_style_initializer<R>::initialize()
 {
-	R m_phi_eff, m_chi_eff;
-
-	m_phi_eff = sqrt(
-		(
-			(MD_E_PHI != 0) ?
-			(
-				2.0*MD_C_PHI*MD_E_PHI*pow<2>(MD_S_PHI)*
-				(pow<2>(MD_S_PHI) + (2.0*MD_E_PHI - 1.0)*pow<2>(MP_PHI0))*
-				pow(1.0 + pow<2>(MP_PHI0/MD_S_PHI), MD_E_PHI)
-			)/pow<2>(pow<2>(MD_S_PHI) + pow<2>(MP_PHI0)) :
-			pow<2>(M_PHI)
-		) + pow<2>(MP_G*MP_CHI0) + 3.0*LAMBDA_PHI*pow<2>(MP_PHI0) + 5.0*GAMMA_PHI*pow<4>(MP_PHI0)
-	)/RESCALE_B;
-	m_chi_eff = sqrt(
-		(
-			(MD_E_CHI != 0) ?
-			(
-				2.0*MD_C_CHI*MD_E_CHI*pow<2>(MD_S_CHI)*
-				(pow<2>(MD_S_CHI) + (2.0*MD_E_CHI - 1.0)*pow<2>(MP_CHI0))*
-				pow(1.0 + pow<2>(MP_CHI0/MD_S_CHI), MD_E_CHI)
-			)/pow<2>(pow<2>(MD_S_CHI) + pow<2>(MP_CHI0)) :
-			pow<2>(M_CHI)
-		) + pow<2>(MP_G*MP_PHI0) + 3.0*LAMBDA_CHI*pow<2>(MP_CHI0) + 5.0*GAMMA_CHI*pow<4>(MP_CHI0)
-	)/RESCALE_B;
+	R md_phi = IF_MD_PHI((2.0*MD_C_PHI*MD_E_PHI*pow<2>(MD_S_PHI)*
+			      (pow<2>(MD_S_PHI) + (2.0*MD_E_PHI - 1.0)*pow<2>(MP_PHI0))*
+			      pow(1.0 + pow<2>(MP_PHI0/MD_S_PHI), MD_E_PHI))
+			     / pow<2>(pow<2>(MD_S_PHI) + pow<2>(MP_PHI0)))
+		IF_NOT_MD_PHI(pow<2>(M_PHI));
+	R m_phi_eff = sqrt(md_phi
+			   IF_CHI(+ pow<2>(MP_G*MP_CHI0))
+			   IF_PHI3(+ 3.0*LAMBDA_PHI*pow<2>(MP_PHI0))
+			   IF_PHI5(+ 5.0*GAMMA_PHI*pow<4>(MP_PHI0))/RESCALE_B);
 
 	initialize_field(phi, phidot, m_phi_eff);
-	initialize_field(chi, chidot, m_chi_eff);
+
+	IF_CHI(R md_chi = IF_MD_CHI((2.0*MD_C_CHI*MD_E_CHI*pow<2>(MD_S_CHI)*
+				     (pow<2>(MD_S_CHI) + (2.0*MD_E_CHI - 1.0)*pow<2>(MP_CHI0))*
+				     pow(1.0 + pow<2>(MP_CHI0/MD_S_CHI), MD_E_CHI))
+				    / pow<2>(pow<2>(MD_S_CHI) + pow<2>(MP_CHI0)))
+	       IF_NOT_MD_CHI(pow<2>(M_CHI));
+	       R m_chi_eff = sqrt(md_chi + pow<2>(MP_G*MP_PHI0)
+				  + IF_CHI3(3.0*LAMBDA_CHI*pow<2>(MP_CHI0))
+				  + IF_CHI5(5.0*GAMMA_CHI*pow<4>(MP_CHI0))
+		       )/RESCALE_B;
+
+	       initialize_field(chi, chidot, m_chi_eff));
 }
 
 template class le_style_initializer<double>;

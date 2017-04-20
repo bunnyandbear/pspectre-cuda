@@ -41,7 +41,7 @@ public:
 	v_integrator() {}
 
 public:
-	R integrate(field<R> &phi, field<R>& chi, R a_t);
+	R integrate(field<R> &phi, IF_CHI_ARG(field<R>& chi,) R a_t);
 
 protected:
 	R *y_integral;
