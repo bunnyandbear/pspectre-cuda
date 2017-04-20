@@ -33,18 +33,18 @@ using namespace std;
 
 __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 				  double *total_gradient_phi, double *total_gradient_chi,
-				  int n, double dp)
+				  double dp)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n*x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 
 	double mom2 = pow2(dp)*(pow2(px) + pow2(py) + pow2(pz));
-	mom2 *= (z == 0 || z == n/2) ? 1 : 2;
+	mom2 *= (z == 0 || z == NGRIDSIZE/2) ? 1 : 2;
 
 	total_gradient_phi[idx] += mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
 	total_gradient_chi[idx] += mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
@@ -64,7 +64,7 @@ void integrator<R>::avg_gradients(field<R> &phi, field<R> &chi,
 	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, chi.mdata.ptr,
 						       total_gradient_phi_arr.ptr(),
 						       total_gradient_chi_arr.ptr(),
-						       NGRIDSIZE, MP_DP);
+						       MP_DP);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();

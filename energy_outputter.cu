@@ -53,17 +53,17 @@ __global__ void energy_sum_kernel(fftw_complex *phi, fftw_complex *chi,
 				  double *avg_gradient_phi_y, double *avg_gradient_chi_y,
 				  double *avg_gradient_phi_z, double *avg_gradient_chi_z,
 				  double *avg_ffd_phi, double *avg_ffd_chi,
-				  int n, double dp)
+				  double dp)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n*x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 
-	int cnt = (z == 0 || z == n/2) ? 1 : 2;
+	int cnt = (z == 0 || z == NGRIDSIZE/2) ? 1 : 2;
 
 	double phi_squared = pow2(phi[idx][0]) + pow2(phi[idx][1]);
 	double chi_squared = pow2(chi[idx][0]) + pow2(chi[idx][1]);
@@ -124,7 +124,7 @@ void energy_outputter<R>::output(bool no_output)
 		avg_gradient_phi_y_arr.ptr(), avg_gradient_chi_y_arr.ptr(),
 		avg_gradient_phi_z_arr.ptr(), avg_gradient_chi_z_arr.ptr(),
 		avg_ffd_phi_arr.ptr(), avg_ffd_chi_arr.ptr(),
-		NGRIDSIZE, MP_DP);
+		MP_DP);
 
 	double avg_phi_squared = avg_phi_squared_arr.sum();
 	double avg_chi_squared = avg_chi_squared_arr.sum();

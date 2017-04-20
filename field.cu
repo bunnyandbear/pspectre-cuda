@@ -86,13 +86,13 @@ field<R>::~field()
 #endif
 }
 
-__global__ void divby_kernel(double *data, double v, int n)
+__global__ void divby_kernel(double *data, double v)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int ldl = 2*(n/2+1);
-	int idx = z + ldl*(y + n*x);
+	int ldl = 2*(NGRIDSIZE/2+1);
+	int idx = z + ldl*(y + NGRIDSIZE*x);
 
 	data[idx] /= v;
 }
@@ -102,7 +102,7 @@ void field<R>::divby(R v)
 {
 	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_threads(ldl, 1);
-	divby_kernel<<<nr_blocks, nr_threads>>>(data.ptr, v, NGRIDSIZE);
+	divby_kernel<<<nr_blocks, nr_threads>>>(data.ptr, v);
 }
 
 template <typename R>

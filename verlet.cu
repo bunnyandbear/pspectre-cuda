@@ -82,16 +82,15 @@ __global__ void verlet_init_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
 				   fftw_complex *phi5_p, fftw_complex *chi5_p,
 				   fftw_complex *phi_md_p, fftw_complex *chi_md_p,
 				   fftw_complex *phiddot, fftw_complex *chiddot,
-				   double a, double adot, double addot,
-				   int n)
+				   double a, double adot, double addot)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n*x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 	double mom2 = pow2(MP_DP)*(pow2(px) + pow2(py) + pow2(pz));
 
 	#pragma unroll
@@ -150,7 +149,7 @@ void verlet<R>::initialize()
 		nlt.phi5.mdata.ptr, nlt.chi5.mdata.ptr,
 		nlt.phi_md.mdata.ptr, nlt.chi_md.mdata.ptr,
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
-		ts.a, ts.adot, addot, NGRIDSIZE);
+		ts.a, ts.adot, addot);
 }
 
 __global__ void verlet_step_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
@@ -161,16 +160,15 @@ __global__ void verlet_step_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
 				   fftw_complex *phi_md_p, fftw_complex *chi_md_p,
 				   fftw_complex *phiddot, fftw_complex *chiddot,
 				   fftw_complex *phidot_staggered, fftw_complex *chidot_staggered,
-				   double a, double adot, double addot, double dt,
-				   int n)
+				   double a, double adot, double addot, double dt)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n*x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 
 	double mom2 = pow2(MP_DP)*(pow2(px) + pow2(py) + pow2(pz));
 
@@ -206,15 +204,15 @@ __global__ void step_reduction_kernel(fftw_complex *phi, fftw_complex *chi,
 				      fftw_complex *phiddot, fftw_complex *chiddot,
 				      fftw_complex *phidot_staggered, fftw_complex *chidot_staggered,
 				      double *total_gradient_phi, double *total_gradient_chi,
-				      double dp, double dt, int n)
+				      double dp, double dt)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n*x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 
 	double mom2 = pow2(dp)*(pow2(px) + pow2(py) + pow2(pz));
 
@@ -227,7 +225,7 @@ __global__ void step_reduction_kernel(fftw_complex *phi, fftw_complex *chi,
 		chi[idx][c] += chidot_staggered[idx][c]*dt;
 	}
 
-	mom2 *= (z == 0 || z == n/2) ? 1 : 2;
+	mom2 *= (z == 0 || z == NGRIDSIZE/2) ? 1 : 2;
 
 	total_gradient_phi[idx] = mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
 	total_gradient_chi[idx] = mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
@@ -262,7 +260,7 @@ void verlet<R>::step()
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
 		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
 		total_gradient_phi_arr.ptr(), total_gradient_chi_arr.ptr(),
-		MP_DP, ts.dt, NGRIDSIZE);
+		MP_DP, ts.dt);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();	
@@ -294,7 +292,7 @@ void verlet<R>::step()
 		nlt.phi_md.mdata.ptr, nlt.chi_md.mdata.ptr,
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
 		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
-		ts.a, ts.adot, addot, ts.dt, NGRIDSIZE);
+		ts.a, ts.adot, addot, ts.dt);
 }
 
 // Explicit instantiations

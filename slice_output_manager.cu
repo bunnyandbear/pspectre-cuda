@@ -100,14 +100,14 @@ __device__ double compute_rho(double a, double adot,
 }
 
 __global__ void compute_phi_kernel(double *phi, double *out,
-				   double a, int n)
+				   double a)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int ldl = 2*(n/2+1);
-	int idx = z + ldl*(y + n*x);
-	int out_idx = z + n*(y + n*x);
+	int ldl = 2*(NGRIDSIZE/2+1);
+	int idx = z + ldl*(y + NGRIDSIZE*x);
+	int out_idx = z + NGRIDSIZE*(y + NGRIDSIZE*x);
 	out[out_idx] = compute_phi(a, phi[idx]);
 }
 
@@ -116,14 +116,14 @@ __global__ void compute_rho_kernel(double *phi, double *chi,
 				   double *phigradx, double *chigradx,
 				   double *phigrady, double *chigrady,
 				   double *phigradz, double *chigradz,
-				   double *out, double a, double adot, int n)
+				   double *out, double a, double adot)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int ldl = 2*(n/2+1);
-	int idx = z + ldl*(y + n*x);
-	int out_idx = z + n*(y + n*x);
+	int ldl = 2*(NGRIDSIZE/2+1);
+	int idx = z + ldl*(y + NGRIDSIZE*x);
+	int out_idx = z + NGRIDSIZE*(y + NGRIDSIZE*x);
 	out[out_idx] = compute_rho(a, adot,
 				   phi[idx], chi[idx],
 				   phidot[idx], chidot[idx],
@@ -171,13 +171,13 @@ void slice_output_manager<R>::output()
 
 	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_threads(NGRIDSIZE, 1);
-	compute_phi_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, phi_out.ptr(), ts.a, NGRIDSIZE);
+	compute_phi_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, phi_out.ptr(), ts.a);
 	compute_rho_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						      phidot.data.ptr, chidot.data.ptr,
 						      gc.phigradx.data.ptr, gc.chigradx.data.ptr,
 						      gc.phigrady.data.ptr, gc.chigrady.data.ptr,
 						      gc.phigradz.data.ptr, gc.chigradz.data.ptr,
-						      rho_out.ptr(), ts.a, ts.adot, NGRIDSIZE);
+						      rho_out.ptr(), ts.a, ts.adot);
 	write_array_to_file(phi_out, "phi", bin_idx);
 	write_array_to_file(rho_out, "rho", bin_idx);
 

@@ -36,14 +36,14 @@ __global__ void nonlin_trans_kernel(double *phi, double *chi,
 				    double *phi_md, double *chi_md,
 				    double *phi3, double *chi3,
 				    double *phi5, double *chi5,
-				    double a_t, int n)
+				    double a_t)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int ldl = 2*(n/2+1);
-	int fdx = z + ldl*(y + n*x);
-	int idx = z + ldl*(y + n*x);
+	int ldl = 2*(NGRIDSIZE/2+1);
+	int fdx = z + ldl*(y + NGRIDSIZE*x);
+	int idx = z + ldl*(y + NGRIDSIZE*x);
 	double p = phi[fdx];
 	double c = chi[fdx];
 
@@ -130,7 +130,7 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 						       phi_md.data.ptr, chi_md.data.ptr,
 						       phi3.data.ptr, chi3.data.ptr,
 						       phi5.data.ptr, chi5.data.ptr,
-						       a_t, NGRIDSIZE);
+						       a_t);
 
 	phi2chi.switch_state(final_state);
 	chi2phi.switch_state(final_state);

@@ -697,15 +697,15 @@ model<R>::~model()
 	delete som;
 }
 
-__global__ void field_init_kernel(fftw_complex *mdata, int n, int effpmax, int effpmin)
+__global__ void field_init_kernel(fftw_complex *mdata, int effpmax, int effpmin)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1) * (y + n*x);
+	int idx = z + (NGRIDSIZE/2+1) * (y + NGRIDSIZE*x);
 	if (px > effpmax || py > effpmax || pz > effpmax ||
 	    px < effpmin || py < effpmin || pz < effpmin) {
 		mdata[idx][0] = mdata[idx][1] = 0;
@@ -845,10 +845,10 @@ void model<R>::set_initial_conditions()
 
 		dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
 		dim3 num_threads(NGRIDSIZE/2+1, 1);
-		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, effpmax, effpmin);
 	}
 }
 

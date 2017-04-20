@@ -39,7 +39,7 @@ using namespace std;
 
 __global__ void v_integrator_kernel(double *phi, double *chi,
 				    double *total_V,
-				    double a_t, int n)
+				    double a_t)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
@@ -47,9 +47,9 @@ __global__ void v_integrator_kernel(double *phi, double *chi,
 	int coeffx = 2 + 2 * (x & 0x1);
 	int coeffy = 2 + 2 * (y & 0x1);
 	int coeffz = 2 + 2 * (z & 0x1);
-	int ldl = 2*(n/2+1);
-	int idx = z + ldl*(y + n*x);
-	int idx_V = z + n*(y + n*x);
+	int ldl = 2*(NGRIDSIZE/2+1);
+	int idx = z + ldl*(y + NGRIDSIZE*x);
+	int idx_V = z + NGRIDSIZE*(y + NGRIDSIZE*x);
 
 	total_V[idx_V] = coeffx * coeffy * coeffz *
 		model_params::V(phi[idx], chi[idx], a_t);
@@ -67,7 +67,7 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	dim3 nr_threads(NGRIDSIZE, 1);
 	v_integrator_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						       total_V_arr.ptr(),
-						       a_t, NGRIDSIZE);
+						       a_t);
 	double total_V = total_V_arr.sum();
 
 	return total_V / (3.0 * 3 * 3 * NTOTAL_GRIDPOINTS);

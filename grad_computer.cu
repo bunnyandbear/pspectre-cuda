@@ -33,15 +33,15 @@ __global__ void grad_computer_kernel(
 	fftw_complex *phigradx, fftw_complex *chigradx,
 	fftw_complex *phigrady, fftw_complex *chigrady,
 	fftw_complex *phigradz, fftw_complex *chigradz,
-	int n, double dp)
+	double dp)
 {
 	int x = blockIdx.x;
 	int y = blockIdx.y;
 	int z = threadIdx.x;
-	int px = x <= n/2 ? x : x - n;
-	int py = y <= n/2 ? y : y - n;
+	int px = x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE;
+	int py = y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE;
 	int pz = z;
-	int idx = z + (n/2+1)*(y + n * x);
+	int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE * x);
 
 	// The Fourier transform conventions require
 	// the normalization of the position-space values by 1/N^3.
@@ -95,7 +95,7 @@ void grad_computer<R>::compute(field_state final_state)
 		phigradx.mdata.ptr, chigradx.mdata.ptr,
 		phigrady.mdata.ptr, chigrady.mdata.ptr,
 		phigradz.mdata.ptr, chigradz.mdata.ptr,
-		NGRIDSIZE, MP_DP);
+		MP_DP);
 
 	phigradx.switch_state(final_state);
 	chigradx.switch_state(final_state);
