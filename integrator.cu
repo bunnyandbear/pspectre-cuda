@@ -31,8 +31,8 @@
 
 using namespace std;
 
-__global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
-				  double *total_gradient_phi, double *total_gradient_chi,
+__global__ void integrator_kernel(fftw_complex *phi, IF_CHI_ARG(fftw_complex *chi,)
+				  double *total_gradient_phi, IF_CHI_ARG(double *total_gradient_chi,)
 				  double dp)
 {
 	int x = blockIdx.x;
@@ -47,31 +47,35 @@ __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 	mom2 *= (z == 0 || z == NGRIDSIZE/2) ? 1 : 2;
 
 	total_gradient_phi[idx] += mom2*(pow2(phi[idx][0]) + pow2(phi[idx][1]));
-	total_gradient_chi[idx] += mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1]));
+	IF_CHI(total_gradient_chi[idx] += mom2*(pow2(chi[idx][0]) + pow2(chi[idx][1])));
 }
 
 template <typename R>
-void integrator<R>::avg_gradients(field<R> &phi, field<R> &chi,
-				  R &avg_gradient_phi, R &avg_gradient_chi)
+void integrator<R>::avg_gradients(field<R> &phi, IF_CHI_ARG(field<R> &chi,)
+				  R &avg_gradient_phi IF_CHI_ARG(, R &avg_gradient_chi))
 {
 	phi.switch_state(momentum);
-	chi.switch_state(momentum);
+	IF_CHI(chi.switch_state(momentum));
 
 	auto total_gradient_phi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+#if ENABLE_CHI != 0
 	auto total_gradient_chi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+#endif
 	dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 num_threads(NGRIDSIZE/2+1, 1);
-	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, chi.mdata.ptr,
+	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, IF_CHI_ARG(chi.mdata.ptr,)
 						       total_gradient_phi_arr.ptr(),
-						       total_gradient_chi_arr.ptr(),
+						       IF_CHI_ARG(total_gradient_chi_arr.ptr(),)
 						       MP_DP);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
-	R total_gradient_chi = total_gradient_chi_arr.sum();
+	IF_CHI(R total_gradient_chi = total_gradient_chi_arr.sum());
 
 	// Divide by total_gridpoints again to get *average* squared gradient and *average* potential energy.
 	avg_gradient_phi = total_gradient_phi/pow<2, R>(NTOTAL_GRIDPOINTS);
+#if ENABLE_CHI != 0
 	avg_gradient_chi = total_gradient_chi/pow<2, R>(NTOTAL_GRIDPOINTS);
+#endif
 }
 
 // Explicit instantiations

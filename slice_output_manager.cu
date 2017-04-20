@@ -46,9 +46,9 @@ __device__ double compute_phi(double a, double phi)
 	return pow(a, -RESCALE_R) * phi/RESCALE_A;
 }
 
-__device__ double compute_V_phys(double a, double phi, double chi)
+__device__ double compute_V_phys(double a, double phi IF_CHI_ARG(, double chi))
 {
-	return model_params::V(phi, chi, a);
+	return model_params::V(phi IF_CHI_ARG(, chi), a);
 }
 
 __device__ double compute_T_phi_phys(double a, double adot, double phi, double phidot)
@@ -57,46 +57,52 @@ __device__ double compute_T_phi_phys(double a, double adot, double phi, double p
 		pow2(RESCALE_R * adot/a ) * 0.5 * pow2(phi);
 }
 
-__device__ double compute_T_chi_phys(double a, double adot, double chi, double chidot)
+#if ENABLE_CHI != 0
+__device__ double compute_T_chi_phys(double a, double adot,
+				     double chi,double chidot)
 {
 	return 0.5 * pow2(chidot) - RESCALE_R * adot/a * chi*chidot +
 		pow2(RESCALE_R * adot/a) * 0.5 * pow2(chi);
 }
+#endif
 
 __device__ double compute_G_phi_phys(double a, double phigradx, double phigrady, double phigradz)
 {
 	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (pow2(phigradx) + pow2(phigrady) + pow2(phigradz));
 }
 
+#if ENABLE_CHI != 0
 __device__ double compute_G_chi_phys(double a, double chigradx, double chigrady, double chigradz)
 {
 	return pow(a, -2.*RESCALE_S - 2.) * 0.5 * (pow2(chigradx) + pow2(chigrady) + pow2(chigradz));
 }
+#endif
 
 __device__ double compute_rho_phys(double a, double adot,
-				   double phi, double chi,
-				   double phidot, double chidot,
-				   double phigradx, double chigradx,
-				   double phigrady, double chigrady,
-				   double phigradz, double chigradz)
+				   double phi, IF_CHI_ARG(double chi,)
+				   double phidot, IF_CHI_ARG(double chidot,)
+				   double phigradx, IF_CHI_ARG(double chigradx,)
+				   double phigrady, IF_CHI_ARG(double chigrady,)
+				   double phigradz IF_CHI_ARG(,double chigradz))
 {
-	return compute_V_phys(a, phi, chi) +
-		compute_T_phi_phys(a, adot, phi, phidot) +
-		compute_T_chi_phys(a, adot, chi, chidot) +
-		compute_G_phi_phys(a, phigradx, phigrady, phigradz) +
-		compute_G_chi_phys(a, chigradx, chigrady, chigradz);
+	return compute_V_phys(a, phi IF_CHI_ARG(, chi))
+		+ compute_T_phi_phys(a, adot, phi, phidot)
+		IF_CHI(+ compute_T_chi_phys(a, adot, chi, chidot))
+		+ compute_G_phi_phys(a, phigradx, phigrady, phigradz)
+		IF_CHI(+ compute_G_chi_phys(a, chigradx, chigrady, chigradz));
 }
 
 __device__ double compute_rho(double a, double adot,
-			      double phi, double chi,
-			      double phidot, double chidot,
-			      double phigradx, double chigradx,
-			      double phigrady, double chigrady,
-			      double phigradz, double chigradz)
+			      double phi, IF_CHI_ARG(double chi,)
+			      double phidot, IF_CHI_ARG(double chidot,)
+			      double phigradx, IF_CHI_ARG(double chigradx,)
+			      double phigrady, IF_CHI_ARG(double chigrady,)
+			      double phigradz IF_CHI_ARG(,double chigradz))
 {
 	return compute_energy_scaling(a, adot) *
-		compute_rho_phys(a, adot, phi, chi, phidot, chidot,
-				 phigradx, chigradx, phigrady, chigrady, phigradz, chigradz);
+		compute_rho_phys(a, adot, phi, IF_CHI_ARG(chi,) phidot, IF_CHI_ARG(chidot,)
+				 phigradx, IF_CHI_ARG(chigradx,) phigrady,
+				 IF_CHI_ARG(chigrady,) phigradz IF_CHI_ARG(, chigradz));
 }
 
 __global__ void compute_phi_kernel(double *phi, double *out,
@@ -111,11 +117,11 @@ __global__ void compute_phi_kernel(double *phi, double *out,
 	out[out_idx] = compute_phi(a, phi[idx]);
 }
 
-__global__ void compute_rho_kernel(double *phi, double *chi,
-				   double *phidot, double *chidot,
-				   double *phigradx, double *chigradx,
-				   double *phigrady, double *chigrady,
-				   double *phigradz, double *chigradz,
+__global__ void compute_rho_kernel(double *phi, IF_CHI_ARG(double *chi,)
+				   double *phidot, IF_CHI_ARG(double *chidot,)
+				   double *phigradx, IF_CHI_ARG(double *chigradx,)
+				   double *phigrady, IF_CHI_ARG(double *chigrady,)
+				   double *phigradz, IF_CHI_ARG(double *chigradz,)
 				   double *out, double a, double adot)
 {
 	int x = blockIdx.x;
@@ -125,11 +131,11 @@ __global__ void compute_rho_kernel(double *phi, double *chi,
 	int idx = z + ldl*(y + NGRIDSIZE*x);
 	int out_idx = z + NGRIDSIZE*(y + NGRIDSIZE*x);
 	out[out_idx] = compute_rho(a, adot,
-				   phi[idx], chi[idx],
-				   phidot[idx], chidot[idx],
-				   phigradx[idx], chigradx[idx],
-				   phigrady[idx], chigrady[idx],
-				   phigradz[idx], chigradz[idx]);
+				   phi[idx], IF_CHI_ARG(chi[idx],)
+				   phidot[idx], IF_CHI_ARG(chidot[idx],)
+				   phigradx[idx], IF_CHI_ARG(chigradx[idx],)
+				   phigrady[idx], IF_CHI_ARG(chigrady[idx],)
+				   phigradz[idx] IF_CHI_ARG(,chigradz[idx]));
 }
 
 static void write_array_to_file(double_array_gpu &arr, const char *field, int idx)
@@ -161,10 +167,10 @@ void slice_output_manager<R>::output()
 	gc.compute();
 
 	phi.switch_state(position);
-	chi.switch_state(position);
-
 	phidot.switch_state(position);
-	chidot.switch_state(position);
+
+	IF_CHI(chi.switch_state(position);
+	       chidot.switch_state(position);)
 
 	auto phi_out = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
 	auto rho_out = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
@@ -172,11 +178,11 @@ void slice_output_manager<R>::output()
 	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_threads(NGRIDSIZE, 1);
 	compute_phi_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, phi_out.ptr(), ts.a);
-	compute_rho_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
-						      phidot.data.ptr, chidot.data.ptr,
-						      gc.phigradx.data.ptr, gc.chigradx.data.ptr,
-						      gc.phigrady.data.ptr, gc.chigrady.data.ptr,
-						      gc.phigradz.data.ptr, gc.chigradz.data.ptr,
+	compute_rho_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, IF_CHI_ARG(chi.data.ptr,)
+						      phidot.data.ptr, IF_CHI_ARG(chidot.data.ptr,)
+						      gc.phigradx.data.ptr, IF_CHI_ARG(gc.chigradx.data.ptr,)
+						      gc.phigrady.data.ptr, IF_CHI_ARG(gc.chigrady.data.ptr,)
+						      gc.phigradz.data.ptr, IF_CHI_ARG(gc.chigradz.data.ptr,)
 						      rho_out.ptr(), ts.a, ts.adot);
 	write_array_to_file(phi_out, "phi", bin_idx);
 	write_array_to_file(rho_out, "rho", bin_idx);

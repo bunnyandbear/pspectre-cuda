@@ -42,9 +42,14 @@ template <typename R>
 class le_style_initializer : public initializer<R>
 {
 public:
-	le_style_initializer(field<R> &phi_, field<R> &phidot_, field<R> &chi_,
-			     field<R> &chidot_, R adot_, R len0)
-		: phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_), adot(adot_)
+	le_style_initializer(field<R> &phi_, field<R> &phidot_,
+			     IF_CHI_ARG(field<R> &chi_,)
+			     IF_CHI_ARG(field<R> &chidot_,)
+			     R adot_, R len0)
+		: phi(phi_), phidot(phidot_),
+		  IF_CHI_ARG(chi(chi_),)
+		  IF_CHI_ARG(chidot(chidot_),)
+		adot(adot_)
 	{
 		using namespace std;
 		
@@ -61,7 +66,8 @@ protected:
 
 protected:
 	field<R> &phi, &phidot;
-	field<R> &chi, &chidot;
+	IF_CHI(field<R> &chi;)
+	IF_CHI(field<R> &chidot;)
 	R adot;
 	R fluctuation_amplitude;
 };

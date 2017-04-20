@@ -12,9 +12,9 @@ fi
 
 echo "Building... (This may take a few minutes.)"
 if [[ $1 == "debug" ]]; then
-    nvcc -DDEBUG $SM_ARCH -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw
+    nvcc -DDEBUG $SM_ARCH -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw -Xcompiler -Wall
 elif [[ $1 == "debug-quiet" ]]; then
-    nvcc $SM_ARCH -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw
+    nvcc $SM_ARCH -o pspectre-debug -g -std=c++11 -O0 *.cpp *.cu -lcufft -lcufftw -Xcompiler -Wall
 else
-    nvcc -std=c++11 $SM_ARCH -o pspectre -O2 *.cpp *.cu -lcufft -lcufftw
+    nvcc -std=c++11 $SM_ARCH -o pspectre -O2 *.cpp *.cu -lcufft -lcufftw -Xcompiler -Wall
 fi

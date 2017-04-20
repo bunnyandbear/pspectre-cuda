@@ -726,7 +726,7 @@ void model<R>::set_initial_conditions()
 
 	if (!external_H0) {
 		phidot0pr = RESCALE_A*MP_PHIDOT0;
-		chidot0pr = RESCALE_A*MP_CHIDOT0;
+		IF_CHI(chidot0pr = RESCALE_A*MP_CHIDOT0);
 
 		const R adot_thrsh = 1e-14;
 		R adot_prev;
@@ -737,16 +737,19 @@ void model<R>::set_initial_conditions()
 			adot_prev = ts.adot;
 
 			R hf = 3. * pow<2>(RESCALE_A)/(4. * M_PI);
-			R h0norm = 1. / (hf - pow<2>(RESCALE_R*RESCALE_A) * (pow<2>(MP_PHI0) + pow<2>(MP_CHI0)));
+			R h0norm = 1. / (hf - pow<2>(RESCALE_R*RESCALE_A) * (pow<2>(MP_PHI0)
+									     IF_CHI(+ pow<2>(MP_CHI0))));
 			for (int s = -1; s <= 1; s += 2) {
 				ts.adot = h0norm * (
-					-RESCALE_R*pow<2>(RESCALE_A)*((phidot0pr/RESCALE_A)*MP_PHI0 + (chidot0pr/RESCALE_A)*MP_CHI0) +
-					s*sqrt(
-						hf * (pow<2>(phidot0pr) + pow<2>(chidot0pr)) +
-						2. * model_params::V(RESCALE_A * MP_PHI0, RESCALE_A * MP_CHI0, 1.) *
-							(hf - pow<2>(RESCALE_R*RESCALE_A)*(pow<2>(MP_PHI0) + pow<2>(MP_CHI0)))
-					)
-				);
+					-RESCALE_R * pow<2>(RESCALE_A) * (
+						(phidot0pr/RESCALE_A)*MP_PHI0
+						IF_CHI(+ (chidot0pr/RESCALE_A)*MP_CHI0)) +
+					s*sqrt(hf * (pow<2>(phidot0pr) IF_CHI(+ pow<2>(chidot0pr))) +
+						2. * model_params::V(RESCALE_A * MP_PHI0,
+								     IF_CHI_ARG(RESCALE_A * MP_CHI0,)
+								     1.) *
+							(hf - pow<2>(RESCALE_R*RESCALE_A)*(pow<2>(MP_PHI0)
+											   IF_CHI(+ pow<2>(MP_CHI0))))));
 
 				if (ts.adot >= 0) {
 					break;				
@@ -755,7 +758,7 @@ void model<R>::set_initial_conditions()
 
 			// Assuming here that a = 1.
 			phidot0pr = RESCALE_A*(MP_PHIDOT0 + RESCALE_R*ts.adot*MP_PHI0);
-			chidot0pr = RESCALE_A*(MP_CHIDOT0 + RESCALE_R*ts.adot*MP_CHI0);
+			IF_CHI(chidot0pr = RESCALE_A*(MP_CHIDOT0 + RESCALE_R*ts.adot*MP_CHI0));
 
 			++adot_iters;
 		} while (adot_iters < 2 || fabs(ts.adot - adot_prev) > ts.adot*adot_thrsh);
@@ -767,15 +770,18 @@ void model<R>::set_initial_conditions()
 			pow(ts.a, RESCALE_R - RESCALE_S)*MP_PHIDOT0 +
 			RESCALE_R*pow(ts.a, RESCALE_R-RESCALE_S-1)*ts.adot*MP_PHI0
 		);
-		chidot0pr = RESCALE_A*(
+		IF_CHI(chidot0pr = RESCALE_A*(
 			pow(ts.a, RESCALE_R - RESCALE_S)*MP_CHIDOT0 +
-			RESCALE_R*pow(ts.a, RESCALE_R-RESCALE_S-1)*ts.adot*MP_CHI0
-		);
+			RESCALE_R*pow(ts.a, RESCALE_R-RESCALE_S-1)*ts.adot*MP_CHI0));
 	}
 
 	if (!homo_ic_phi || !homo_ic_chi) {
 		initializer<R> *init = (initializer<R> *) new le_style_initializer<R>
-			(phi, phidot, chi, chidot, ts.adot, len0);
+			(phi,
+			 phidot,
+			 IF_CHI_ARG(chi,)
+			 IF_CHI_ARG(chidot,)
+			 ts.adot, len0);
 
 		init->initialize();
 
@@ -788,11 +794,11 @@ void model<R>::set_initial_conditions()
 			phi.divby(cf);
 			phidot.divby(cf);
 
-			chi.switch_state(momentum);
-			chidot.switch_state(momentum);
+			IF_CHI(chi.switch_state(momentum);
+			       chidot.switch_state(momentum);
 
-			chi.divby(cf);
-			chidot.divby(cf);
+			       chi.divby(cf);
+			       chidot.divby(cf));
 		}
 
 		if (homo_ic_phi) {
@@ -803,39 +809,39 @@ void model<R>::set_initial_conditions()
 		}
 
 		if (homo_ic_chi) {
-			chi.switch_state(momentum);
-			chidot.switch_state(momentum);
-			chi.fill0();
-			chidot.fill0();
+			IF_CHI(chi.switch_state(momentum);
+			       chidot.switch_state(momentum);
+			       chi.fill0();
+			       chidot.fill0());
 		}
 	}
 	else {
 		phi.switch_state(momentum);
-		chi.switch_state(momentum);
 		phidot.switch_state(momentum);
-		chidot.switch_state(momentum);
+		IF_CHI(chi.switch_state(momentum);
+		       chidot.switch_state(momentum));
 	}
 
 	phi.divby(ics_scale);
-	chi.divby(ics_scale);
 	phidot.divby(ics_scale);
-	chidot.divby(ics_scale);
+	IF_CHI(chi.divby(ics_scale);
+	       chidot.divby(ics_scale));
 		
 	// Note that the 0-mode in Fourier space is the sum over all points in position space.
 	phi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * NTOTAL_GRIDPOINTS * MP_PHI0;
 	phi.mdata[0][1] = 0.;
 	phidot.mdata[0][0] = NTOTAL_GRIDPOINTS * phidot0pr;
 	phidot.mdata[0][1] = 0.;
-	chi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * NTOTAL_GRIDPOINTS * MP_CHI0;
-	chi.mdata[0][1] = 0.;
-	chidot.mdata[0][0] = NTOTAL_GRIDPOINTS * chidot0pr;
-	chidot.mdata[0][1] = 0.;
+	IF_CHI(chi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * NTOTAL_GRIDPOINTS * MP_CHI0;
+	       chi.mdata[0][1] = 0.;
+	       chidot.mdata[0][0] = NTOTAL_GRIDPOINTS * chidot0pr;
+	       chidot.mdata[0][1] = 0.);
 
 	if (ics_eff_size > 0) {
 		phi.switch_state(momentum);
-		chi.switch_state(momentum);
 		phidot.switch_state(momentum);
-		chidot.switch_state(momentum);
+		IF_CHI(chi.switch_state(momentum);
+		       chidot.switch_state(momentum));
 
 		// Note that F_{x,y,z} = F*_{N-x,N-y,N-z}
 		// What does ics_eff_size mean? In means that all momentum modes will be zeroed out which
@@ -846,9 +852,11 @@ void model<R>::set_initial_conditions()
 		dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
 		dim3 num_threads(NGRIDSIZE/2+1, 1);
 		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, effpmax, effpmin);
 		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, effpmax, effpmin);
+#if ENABLE_CHI != 0
+		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, effpmax, effpmin);
 		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, effpmax, effpmin);
+#endif
 	}
 }
 
@@ -882,7 +890,8 @@ template <typename R>
 void model<R>::evolve(integrator<R> *ig)
 {
 	int counter = 0;
-	energy_outputter<R> eo(mp, ts, phi, chi, phidot, chidot);
+	energy_outputter<R> eo(mp, ts, phi,
+			       IF_CHI_ARG(chi,) phidot IF_CHI_ARG(, chidot));
 	ofstream scaleof("sf.tsv");
 	scaleof << setprecision(30) << fixed;
 
@@ -973,7 +982,10 @@ void model<R>::run()
 
 	set_initial_conditions();
 	
-	integrator<R> *ig = (integrator<R> *) new verlet<R>(mp, ts, phi, phidot, chi, chidot, fft_plans);
+	integrator<R> *ig = (integrator<R> *) new verlet<R>(mp, ts, phi, phidot,
+							    IF_CHI_ARG(chi,)
+							    IF_CHI_ARG(chidot,)
+							    fft_plans);
 
 	cout << "Beginning field evolution..." << endl;
 	evolve(ig);
@@ -988,23 +1000,23 @@ void model<R>::write_info_file()
 	info_file << scientific;
 	
 	info_file << "N: " << NGRIDSIZE << endl;
-	info_file << "final time: " << tf << endl;
-	info_file << "gamma_phi: " << GAMMA_PHI << endl;
-	info_file << "gamma_chi: " << GAMMA_CHI << endl;
-	info_file << "lambda_phi: " << LAMBDA_PHI << endl;
-	info_file << "lambda_chi: " << LAMBDA_CHI << endl;
-	info_file << "m_phi: " << M_PHI << endl;
-	info_file << "m_chi: " << M_CHI << endl;
-	info_file << "g: " << MP_G << endl;
-	info_file << "monodromy_exp_phi: " << MD_E_PHI << endl;
-	info_file << "monodromy_exp_chi: " << MD_E_CHI << endl;
-	info_file << "monodromy_scale_phi: " << MD_S_PHI << endl;
-	info_file << "monodromy_scale_chi: " << MD_S_CHI << endl;
 	info_file << "L: " << MP_LEN << endl;
+	info_file << "final time: " << tf << endl;
 	info_file << "phi0: " << MP_PHI0 << endl;
-	info_file << "chi0: " << MP_CHI0 << endl;
 	info_file << "phidot0: " << MP_PHIDOT0 << endl;
-	info_file << "chidot0: " << MP_CHIDOT0 << endl;
+	IF_PHI3(info_file << "lambda_phi: " << LAMBDA_PHI << endl);
+	IF_PHI5(info_file << "gamma_phi: " << GAMMA_PHI << endl);
+	info_file << "m_phi: " << M_PHI << endl;
+	IF_MD_PHI(info_file << "monodromy_exp_phi: " << MD_E_PHI << endl;
+		  info_file << "monodromy_scale_phi: " << MD_S_PHI << endl);
+	IF_CHI(info_file << "chi0: " << MP_CHI0 << endl;
+	       info_file << "chidot0: " << MP_CHIDOT0 << endl;
+	       info_file << "g: " << MP_G << endl;
+	       IF_PHI3(info_file << "lambda_chi: " << LAMBDA_CHI << endl);
+	       IF_PHI5(info_file << "gamma_chi: " << GAMMA_CHI << endl);
+	       info_file << "m_chi: " << M_CHI << endl;
+	       IF_MD_PHI(info_file << "monodromy_exp_chi: " << MD_E_CHI << endl;
+			 info_file << "monodromy_scale_chi: " << MD_S_CHI << endl));
 
 	info_file << endl;
 
