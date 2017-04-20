@@ -31,7 +31,6 @@
 #ifndef V_INTEGRATOR_HPP
 #define V_INTEGRATOR_HPP
 
-#include "field_size.hpp"
 #include "model_params.hpp"
 #include "field.hpp"
 
@@ -39,13 +38,12 @@ template <typename R>
 class v_integrator
 {
 public:
-	v_integrator(field_size &fs_) : fs(fs_) {}
+	v_integrator() {}
 
 public:
 	R integrate(field<R> &phi, field<R>& chi, R a_t);
 
 protected:
-	field_size &fs;	
 	R *y_integral;
 	R *z_integral;
 };

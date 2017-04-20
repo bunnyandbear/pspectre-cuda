@@ -32,8 +32,10 @@
 #define FIELD_HPP
 
 #include "fft.hpp"
-#include "field_size.hpp"
 #include "gpu_array_accessor.hpp"
+#include "model_params.hpp"
+
+#define NALLOC_SIZE			(NTOTAL_MOMENTUM_GRIDPOINTS * sizeof(fftw_complex))
 
 enum field_state
 {
@@ -50,10 +52,10 @@ template <typename R>
 class field
 {
 public:
-	field(field_size &fs_, fft_worker<R> &fft_plans_, const char *name_ = 0)
+	field(fft_worker<R> &fft_plans_, const char *name_ = 0)
 		: state(uninitialized), name(name_), data(0), mdata(0)
 	{
-		construct(fs_, fft_plans_);
+		construct(fft_plans_);
 	}
 	
 	field(const char *name_ = 0)
@@ -62,15 +64,13 @@ public:
 	~field();
 
 public:
-	void construct(field_size &fs_, fft_worker<R> &fft_plans_);
+	void construct(fft_worker<R> &fft_plans_);
 	void divby(R v);
 	void switch_state(field_state state_);
 	void fill0();
 	void upload(fftw_complex *fld);
 
 public:
-	field_size fs;
-
 	/** 
 	 * @brief The position-space data.
 	 *
@@ -100,6 +100,27 @@ private:
 
 public:
 	const char *name;
+};
+
+class host_field {
+	fftw_complex *ptr;
+public:
+	host_field() {
+		ptr = (fftw_complex *) malloc(NALLOC_SIZE);
+		if (ptr == NULL) {
+			std::cout << "host_field: malloc failed" << std::endl;
+			exit(1);
+		}
+	}
+	~host_field() {
+		free(ptr);
+	}
+	operator fftw_complex *() {
+		return ptr;
+	}
+	double *data() {
+		return (double *) ptr;
+	}
 };
 
 #endif // FIELD_HPP

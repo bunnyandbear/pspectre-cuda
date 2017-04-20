@@ -31,7 +31,6 @@
 #ifndef VERLET_HPP
 #define VERLET_HPP
 
-#include "field_size.hpp"
 #include "model_params.hpp"
 #include "time_state.hpp"
 #include "field.hpp"
@@ -44,19 +43,19 @@ template <typename R>
 class verlet : public integrator<R>
 {
 public:
-	verlet(field_size &fs_, model_params &mp_, time_state<R> &ts_,
+	verlet(model_params &mp_, time_state<R> &ts_,
 		field<R> &phi_, field<R> &phidot_, field<R> &chi_, field<R> &chidot_, fft_worker<R> &fft_plans)
-		: fs(fs_), upfs(fs_.n), mp(mp_), ts(ts_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_),
+		: mp(mp_), ts(ts_), phi(phi_), phidot(phidot_), chi(chi_), chidot(chidot_),
 		phiddot("phiddot"), phidot_staggered("phidot_staggered"),
 		chiddot("chiddot"), chidot_staggered("chidot_staggered"),
-		nlt(fs_, ts_, fft_plans), vi(fs_),
+		nlt(ts_, fft_plans), vi(),
 		addot(0), adot_staggered(0), dptdt(1./RESCALE_B), ddptdt(0), dptdt_staggered(0)
 	{
-		phiddot.construct(upfs, fft_plans);
-		chiddot.construct(upfs, fft_plans);
+		phiddot.construct(fft_plans);
+		chiddot.construct(fft_plans);
 		
-		phidot_staggered.construct(upfs, fft_plans);
-		chidot_staggered.construct(upfs, fft_plans);
+		phidot_staggered.construct(fft_plans);
+		chidot_staggered.construct(fft_plans);
 	}
 
 public:	
@@ -64,7 +63,6 @@ public:
 	virtual void initialize();
 
 protected:
-	field_size &fs, upfs;
 	model_params &mp;
 	time_state<R> &ts;
 

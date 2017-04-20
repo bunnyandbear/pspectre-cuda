@@ -24,7 +24,6 @@
  */
 
 #include "slice_output_manager.hpp"
-#include "host_field.hpp"
 #include "reduction_helper.hpp"
 #include "pow.hpp"
 
@@ -167,18 +166,18 @@ void slice_output_manager<R>::output()
 	phidot.switch_state(position);
 	chidot.switch_state(position);
 
-	auto phi_out = double_array_gpu(fs.n, fs.n, fs.n);
-	auto rho_out = double_array_gpu(fs.n, fs.n, fs.n);
+	auto phi_out = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
+	auto rho_out = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
 
-	dim3 nr_blocks(fs.n, fs.n);
-	dim3 nr_threads(fs.n, 1);
-	compute_phi_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, phi_out.ptr(), ts.a, fs.n);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_threads(NGRIDSIZE, 1);
+	compute_phi_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, phi_out.ptr(), ts.a, NGRIDSIZE);
 	compute_rho_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						      phidot.data.ptr, chidot.data.ptr,
 						      gc.phigradx.data.ptr, gc.chigradx.data.ptr,
 						      gc.phigrady.data.ptr, gc.chigrady.data.ptr,
 						      gc.phigradz.data.ptr, gc.chigradz.data.ptr,
-						      rho_out.ptr(), ts.a, ts.adot, fs.n);
+						      rho_out.ptr(), ts.a, ts.adot, NGRIDSIZE);
 	write_array_to_file(phi_out, "phi", bin_idx);
 	write_array_to_file(rho_out, "rho", bin_idx);
 

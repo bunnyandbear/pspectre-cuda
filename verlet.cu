@@ -123,7 +123,7 @@ void verlet<R>::initialize()
 {
 	R avg_gradient_phi = 0.0, avg_gradient_chi = 0.0;
 
-	integrator<R>::avg_gradients(fs, phi, chi,
+	integrator<R>::avg_gradients(phi, chi,
 				     avg_gradient_phi, avg_gradient_chi);
 
 	R avg_V = vi.integrate(phi, chi, ts.a);
@@ -141,8 +141,8 @@ void verlet<R>::initialize()
 	phiddot.switch_state(momentum);
 	chiddot.switch_state(momentum);
 
-	dim3 nr_blocks(fs.n, fs.n);
-	dim3 nr_threads(fs.n/2+1, 1);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_threads(NGRIDSIZE/2+1, 1);
 	verlet_init_kernel<<<nr_blocks, nr_threads>>>(
 		phi.mdata.ptr, chi.mdata.ptr,
 		nlt.chi2phi.mdata.ptr, nlt.phi2chi.mdata.ptr,
@@ -150,7 +150,7 @@ void verlet<R>::initialize()
 		nlt.phi5.mdata.ptr, nlt.chi5.mdata.ptr,
 		nlt.phi_md.mdata.ptr, nlt.chi_md.mdata.ptr,
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
-		ts.a, ts.adot, addot, fs.n);
+		ts.a, ts.adot, addot, NGRIDSIZE);
 }
 
 __global__ void verlet_step_kernel(fftw_complex *phi_p, fftw_complex *chi_p,
@@ -252,23 +252,23 @@ void verlet<R>::step()
 	phidot_staggered.switch_state(momentum);
 	chidot_staggered.switch_state(momentum);
 
-	auto total_gradient_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto total_gradient_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	dim3 num_blocks(fs.n, fs.n);
-	dim3 num_threads(fs.n/2+1, 1);
+	auto total_gradient_phi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto total_gradient_chi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 num_threads(NGRIDSIZE/2+1, 1);
 	step_reduction_kernel<<<num_blocks, num_threads>>>(
 		phi.mdata.ptr, chi.mdata.ptr,
 		phidot.mdata.ptr, chidot.mdata.ptr,
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
 		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
 		total_gradient_phi_arr.ptr(), total_gradient_chi_arr.ptr(),
-		MP_DP, ts.dt, fs.n);
+		MP_DP, ts.dt, NGRIDSIZE);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();	
 
-	R avg_gradient_phi = total_gradient_phi/pow<2, R>(fs.total_gridpoints);
-	R avg_gradient_chi = total_gradient_chi/pow<2, R>(fs.total_gridpoints);
+	R avg_gradient_phi = total_gradient_phi/pow<2, R>(NTOTAL_GRIDPOINTS);
+	R avg_gradient_chi = total_gradient_chi/pow<2, R>(NTOTAL_GRIDPOINTS);
 
 	R avg_V = vi.integrate(phi, chi, ts.a);
 
@@ -283,8 +283,8 @@ void verlet<R>::step()
 	phi.switch_state(momentum);
 	chi.switch_state(momentum);
 
-	dim3 nr_blocks(fs.n, fs.n);
-	dim3 nr_threads(fs.n/2+1, 1);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_threads(NGRIDSIZE/2+1, 1);
 	verlet_step_kernel<<<nr_blocks, nr_threads>>>(
 		phi.mdata.ptr, chi.mdata.ptr,
 		phidot.mdata.ptr, chidot.mdata.ptr,
@@ -294,7 +294,7 @@ void verlet<R>::step()
 		nlt.phi_md.mdata.ptr, nlt.chi_md.mdata.ptr,
 		phiddot.mdata.ptr, chiddot.mdata.ptr,
 		phidot_staggered.mdata.ptr, chidot_staggered.mdata.ptr,
-		ts.a, ts.adot, addot, ts.dt, fs.n);
+		ts.a, ts.adot, addot, ts.dt, NGRIDSIZE);
 }
 
 // Explicit instantiations

@@ -28,7 +28,6 @@
 #include "pow.hpp"
 #include "fft.hpp"
 #include "le_style_initializer.hpp"
-#include "host_field.hpp"
 
 #include <cstdlib>
 #include <cmath>
@@ -83,33 +82,33 @@ void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &fldd
 	fld_dev.switch_state(momentum);
 	flddot_dev.switch_state(momentum);
 
-	auto fld = host_field(fs);
-	auto flddot = host_field(fs);
+	auto fld = host_field();
+	auto flddot = host_field();
 
-	for (int x = 0; x < fs.n; ++x) {
-		int x_conj = (x == 0 ? 0 : fs.n - x);
-		int px = (x <= fs.n/2 ? x : x - fs.n);
+	for (int x = 0; x < NGRIDSIZE; ++x) {
+		int x_conj = (x == 0 ? 0 : NGRIDSIZE - x);
+		int px = (x <= NGRIDSIZE/2 ? x : x - NGRIDSIZE);
 
-		for (int y = 0; y < fs.n; ++y) {
-			int py = (y <= fs.n/2 ? y : y - fs.n);
+		for (int y = 0; y < NGRIDSIZE; ++y) {
+			int py = (y <= NGRIDSIZE/2 ? y : y - NGRIDSIZE);
 
-			for (int z = 1; z < fs.n/2; ++z) {
+			for (int z = 1; z < NGRIDSIZE/2; ++z) {
 				int pz = z;
-				int idx = z + (fs.n/2+1)*(y + fs.n*x);
+				int idx = z + (NGRIDSIZE/2+1)*(y + NGRIDSIZE*x);
 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, false);
 			}
 			
 			// Different cases for the z = 0 and z = N/2 modes (making use of conj symmetry)
-			if (y > fs.n/2 || (x > fs.n/2 && (y == 0 || y == fs.n/2))) {
-				int y_conj = (y == 0 ? 0 : fs.n - y);
+			if (y > NGRIDSIZE/2 || (x > NGRIDSIZE/2 && (y == 0 || y == NGRIDSIZE/2))) {
+				int y_conj = (y == 0 ? 0 : NGRIDSIZE - y);
 
 				//Set the z = 0 mode for these x and y indices
 				int z = 0;
 				int pz = z;
-				int idx = z + (fs.n/2 + 1) * (y + fs.n*x);
-				int idx_conj = z + (fs.n/2 + 1) * (y_conj + fs.n*x_conj);
+				int idx = z + (NGRIDSIZE/2 + 1) * (y + NGRIDSIZE*x);
+				int idx_conj = z + (NGRIDSIZE/2 + 1) * (y_conj + NGRIDSIZE*x_conj);
 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, false);
@@ -120,10 +119,10 @@ void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &fldd
 				flddot[idx_conj][1] = -1. * flddot[idx][1];
 
 				// Set the z = N / 2 mode
-				z = fs.n/2;
+				z = NGRIDSIZE/2;
 				pz = z;
-				idx = z + (fs.n/2 + 1) * (y + fs.n*x);
-				idx_conj = z + (fs.n/2 + 1) * (y_conj + fs.n*x_conj);
+				idx = z + (NGRIDSIZE/2 + 1) * (y + NGRIDSIZE*x);
+				idx_conj = z + (NGRIDSIZE/2 + 1) * (y_conj + NGRIDSIZE*x_conj);
 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, false);
@@ -133,19 +132,19 @@ void le_style_initializer<R>::initialize_field(field<R> &fld_dev, field<R> &fldd
 				flddot[idx_conj][0] = flddot[idx][0];
 				flddot[idx_conj][1] = -1. * flddot[idx][1];
 			}
-			else if ((x == 0 || x == fs.n/2) && (y == 0 || y == fs.n/2)) {
+			else if ((x == 0 || x == NGRIDSIZE/2) && (y == 0 || y == NGRIDSIZE/2)) {
 				int z = 0;
 				int pz = z;
-				int idx = z + (fs.n/2 + 1) * (y + fs.n*x);
+				int idx = z + (NGRIDSIZE/2 + 1) * (y + NGRIDSIZE*x);
 
 				if (x != 0 || y != 0) {
 					// cout << "\tmode: " << x << " " << y << " " << z << endl;
 					set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, true);
 				}
 				
-				z = fs.n/2;
+				z = NGRIDSIZE/2;
 				pz = z;
-				idx = z + (fs.n/2 + 1) * (y + fs.n*x);
+				idx = z + (NGRIDSIZE/2 + 1) * (y + NGRIDSIZE*x);
 
 				// cout << "\tmode: " << x << " " << y << " " << z << endl;
 				set_mode(fld, flddot, m_fld_eff, px, py, pz, idx, true);

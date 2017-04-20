@@ -46,7 +46,7 @@
 template <typename R>
 class energy_outputter {
 public:
-	energy_outputter(field_size &fs_, model_params &mp_, time_state<R> &ts_,
+	energy_outputter(model_params &mp_, time_state<R> &ts_,
 		field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_);
 
 public:
@@ -59,7 +59,6 @@ public:
 	void output(bool no_output = false);
 
 protected:
-	field_size &fs;
 	model_params &mp;
 	time_state<R> &ts;
 	field<R> &phi, &chi;

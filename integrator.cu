@@ -51,28 +51,27 @@ __global__ void integrator_kernel(fftw_complex *phi, fftw_complex *chi,
 }
 
 template <typename R>
-void integrator<R>::avg_gradients(field_size &fs,
-				  field<R> &phi, field<R> &chi,
+void integrator<R>::avg_gradients(field<R> &phi, field<R> &chi,
 				  R &avg_gradient_phi, R &avg_gradient_chi)
 {
 	phi.switch_state(momentum);
 	chi.switch_state(momentum);
 
-	auto total_gradient_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto total_gradient_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	dim3 num_blocks(fs.n, fs.n);
-	dim3 num_threads(fs.n/2+1, 1);
+	auto total_gradient_phi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto total_gradient_chi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 num_threads(NGRIDSIZE/2+1, 1);
 	integrator_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, chi.mdata.ptr,
 						       total_gradient_phi_arr.ptr(),
 						       total_gradient_chi_arr.ptr(),
-						       fs.n, MP_DP);
+						       NGRIDSIZE, MP_DP);
 
 	R total_gradient_phi = total_gradient_phi_arr.sum();
 	R total_gradient_chi = total_gradient_chi_arr.sum();
 
 	// Divide by total_gridpoints again to get *average* squared gradient and *average* potential energy.
-	avg_gradient_phi = total_gradient_phi/pow<2, R>(fs.total_gridpoints);
-	avg_gradient_chi = total_gradient_chi/pow<2, R>(fs.total_gridpoints);
+	avg_gradient_phi = total_gradient_phi/pow<2, R>(NTOTAL_GRIDPOINTS);
+	avg_gradient_chi = total_gradient_chi/pow<2, R>(NTOTAL_GRIDPOINTS);
 }
 
 // Explicit instantiations

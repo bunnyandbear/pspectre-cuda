@@ -36,10 +36,10 @@ double compute_energy_scaling(double a, double adot);
 using namespace std;
 
 template <typename R>
-energy_outputter<R>::energy_outputter(field_size &fs_, model_params &mp_, time_state<R> &ts_,
+energy_outputter<R>::energy_outputter(model_params &mp_, time_state<R> &ts_,
 	field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_)
-	: fs(fs_), mp(mp_), ts(ts_), phi(phi_), chi(chi_), phidot(phidot_), chidot(chidot_),
-	vi(fs), avg_rho_phys(0.0), avg_rho(0.0)
+	: mp(mp_), ts(ts_), phi(phi_), chi(chi_), phidot(phidot_), chidot(chidot_),
+	vi(), avg_rho_phys(0.0), avg_rho(0.0)
 {
 	of.open("energy.tsv");
 	of << setprecision(30) << scientific;
@@ -100,21 +100,21 @@ void energy_outputter<R>::output(bool no_output)
 	phidot.switch_state(momentum);
 	chidot.switch_state(momentum);
 	
-	auto avg_phi_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_chi_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_phidot_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_chidot_squared_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_phi_x_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_chi_x_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_phi_y_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_chi_y_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_phi_z_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_gradient_chi_z_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_ffd_phi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
-	auto avg_ffd_chi_arr = double_array_gpu(fs.n, fs.n, fs.n/2+1);
+	auto avg_phi_squared_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_chi_squared_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_phidot_squared_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_chidot_squared_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_phi_x_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_chi_x_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_phi_y_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_chi_y_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_phi_z_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_gradient_chi_z_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_ffd_phi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
+	auto avg_ffd_chi_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE/2+1);
 
-	dim3 num_blocks(fs.n, fs.n);
-	dim3 num_threads(fs.n/2+1, 1);
+	dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 num_threads(NGRIDSIZE/2+1, 1);
 	energy_sum_kernel<<<num_blocks, num_threads>>>(
 		phi.mdata.ptr, chi.mdata.ptr,
 		phidot.mdata.ptr, chidot.mdata.ptr,
@@ -124,7 +124,7 @@ void energy_outputter<R>::output(bool no_output)
 		avg_gradient_phi_y_arr.ptr(), avg_gradient_chi_y_arr.ptr(),
 		avg_gradient_phi_z_arr.ptr(), avg_gradient_chi_z_arr.ptr(),
 		avg_ffd_phi_arr.ptr(), avg_ffd_chi_arr.ptr(),
-		fs.n, MP_DP);
+		NGRIDSIZE, MP_DP);
 
 	double avg_phi_squared = avg_phi_squared_arr.sum();
 	double avg_chi_squared = avg_chi_squared_arr.sum();
@@ -140,24 +140,24 @@ void energy_outputter<R>::output(bool no_output)
 	double avg_ffd_chi = avg_ffd_chi_arr.sum();
 
 	// The first factor of 1./N^3 comes from Parseval's theorem.
-	avg_phidot_squared /= 2*pow2(fs.total_gridpoints);
-	avg_chidot_squared /= 2*pow2(fs.total_gridpoints);
+	avg_phidot_squared /= 2*pow2(NTOTAL_GRIDPOINTS);
+	avg_chidot_squared /= 2*pow2(NTOTAL_GRIDPOINTS);
 
 	R fld_fac = 0.5 * pow2(RESCALE_R) * pow2(ts.adot/ts.a);
-	avg_phi_squared *= fld_fac / pow2(fs.total_gridpoints);
-	avg_chi_squared *= fld_fac / pow2(fs.total_gridpoints);
+	avg_phi_squared *= fld_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_chi_squared *= fld_fac / pow2(NTOTAL_GRIDPOINTS);
 
 	R grad_fac = 0.5 * pow(ts.a, -2. * RESCALE_S - 2.);
-	avg_gradient_phi_x *= grad_fac / pow2(fs.total_gridpoints);
-	avg_gradient_chi_x *= grad_fac / pow2(fs.total_gridpoints);
-	avg_gradient_phi_y *= grad_fac / pow2(fs.total_gridpoints);
-	avg_gradient_chi_y *= grad_fac / pow2(fs.total_gridpoints);
-	avg_gradient_phi_z *= grad_fac / pow2(fs.total_gridpoints);
-	avg_gradient_chi_z *= grad_fac / pow2(fs.total_gridpoints);
+	avg_gradient_phi_x *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_gradient_chi_x *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_gradient_phi_y *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_gradient_chi_y *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_gradient_phi_z *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_gradient_chi_z *= grad_fac / pow2(NTOTAL_GRIDPOINTS);
 	
 	R ffd_fac = -RESCALE_R * ts.adot/ts.a;
-	avg_ffd_phi *= ffd_fac / pow2(fs.total_gridpoints);
-	avg_ffd_chi *= ffd_fac / pow2(fs.total_gridpoints);
+	avg_ffd_phi *= ffd_fac / pow2(NTOTAL_GRIDPOINTS);
+	avg_ffd_chi *= ffd_fac / pow2(NTOTAL_GRIDPOINTS);
 
 	// This is the *average* energy per gridpoint.
 	avg_rho_phys = avg_V + avg_phi_squared + avg_chi_squared +

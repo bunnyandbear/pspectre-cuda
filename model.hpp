@@ -31,7 +31,6 @@
 #ifndef MODEL_HPP
 #define MODEL_HPP
 
-#include "field_size.hpp"
 #include "model_params.hpp"
 #include "time_state.hpp"
 #include "field.hpp"
@@ -64,7 +63,6 @@ protected:
 	void private_info_file_output(std::ofstream &info_file);
 
 protected:
-	field_size fs;
 	model_params mp;
 	time_state<R> ts;
 	bool use_verlet, le_init = true, homo_ic_phi, homo_ic_chi;

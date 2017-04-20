@@ -39,19 +39,18 @@ using namespace std;
 void print_memory_usage();
 
 template <typename R>
-void field<R>::construct(field_size &fs_, fft_worker<R> &fft_plans_)
+void field<R>::construct(fft_worker<R> &fft_plans_)
 {
-	fs = fs_;
-	ldl = 2*(fs.n/2+1);
+	ldl = 2*(NGRIDSIZE/2+1);
 	fft_plans = &fft_plans_;
 
 #ifdef DEBUG
 	cout << "\nConstructing field " << (name ? name : "unknown") << endl;
-	cout << "Number of grid points: " << fs.n << endl;
+	cout << "Number of grid points: " << NGRIDSIZE << endl;
 	cout << "Memory usage before cudaMalloc:" << endl;
 	print_memory_usage();
 #endif
-	cudaError_t ret = cudaMalloc(&raw_ptr, fs.alloc_size);
+	cudaError_t ret = cudaMalloc(&raw_ptr, NALLOC_SIZE);
 	if (ret != cudaSuccess) {
 		cout << "cudaMalloc() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
@@ -65,7 +64,7 @@ void field<R>::construct(field_size &fs_, fft_worker<R> &fft_plans_)
 	fill0();
 
 	// construct fft_plans (first time only)
-	fft_plans->construct(fs.n, fs.n, fs.n, data.ptr, mdata.ptr, false);
+	fft_plans->construct(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE, data.ptr, mdata.ptr, false);
 }
 
 template <typename R>
@@ -101,9 +100,9 @@ __global__ void divby_kernel(double *data, double v, int n)
 template <typename R>
 void field<R>::divby(R v)
 {
-	dim3 nr_blocks(fs.n, fs.n);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
 	dim3 nr_threads(ldl, 1);
-	divby_kernel<<<nr_blocks, nr_threads>>>(data.ptr, v, fs.n);
+	divby_kernel<<<nr_blocks, nr_threads>>>(data.ptr, v, NGRIDSIZE);
 }
 
 template <typename R>
@@ -119,14 +118,14 @@ void field<R>::switch_state(field_state state_)
 	} else if ((state == momentum) && (state_ == position)) {
 		state = position;
 		fft_plans->execute_m2p(mdata.ptr, data.ptr);
-		divby(fs.total_gridpoints);
+		divby(NTOTAL_GRIDPOINTS);
 	}
 }
 
 template <typename R>
 void field<R>::fill0()
 {
-	cudaError_t ret = cudaMemset(raw_ptr, 0, fs.alloc_size);
+	cudaError_t ret = cudaMemset(raw_ptr, 0, NALLOC_SIZE);
 	if (ret != cudaSuccess) {
 		cout << "fill0: cudaMemset() failed. GPUassert: "
 		     << cudaGetErrorString(ret) << endl;
@@ -136,7 +135,7 @@ void field<R>::fill0()
 template <typename R>
 void field<R>::upload(fftw_complex *fld)
 {
-	cudaError_t ret = cudaMemcpy(raw_ptr, fld, fs.alloc_size, cudaMemcpyDefault);
+	cudaError_t ret = cudaMemcpy(raw_ptr, fld, NALLOC_SIZE, cudaMemcpyDefault);
 	if (ret != cudaSuccess) {
 		cout << "field::upload cudaMemcpy fail. field name = "
 		     << (name ? name : "unknown") << endl;

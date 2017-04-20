@@ -88,14 +88,14 @@ void grad_computer<R>::compute(field_state final_state)
 	chigradz.switch_state(uninitialized);
 	chigradz.switch_state(momentum);
 
-	dim3 num_blocks(fs.n, fs.n);
-	dim3 num_threads(fs.n/2+1, 1);
+	dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 num_threads(NGRIDSIZE/2+1, 1);
 	grad_computer_kernel<<<num_blocks, num_threads>>>(
 		phi.mdata.ptr, chi.mdata.ptr,
 		phigradx.mdata.ptr, chigradx.mdata.ptr,
 		phigrady.mdata.ptr, chigrady.mdata.ptr,
 		phigradz.mdata.ptr, chigradz.mdata.ptr,
-		fs.n, MP_DP);
+		NGRIDSIZE, MP_DP);
 
 	phigradx.switch_state(final_state);
 	chigradx.switch_state(final_state);

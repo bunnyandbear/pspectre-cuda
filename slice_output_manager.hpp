@@ -31,7 +31,6 @@
 #ifndef SLICE_OUTPUT_MANAGER_HPP
 #define SLICE_OUTPUT_MANAGER_HPP
 
-#include "field_size.hpp"
 #include "time_state.hpp"
 #include "field.hpp"
 #include "grad_computer.hpp"
@@ -42,21 +41,20 @@ template <typename R>
 class slice_output_manager
 {
 public:
-	slice_output_manager(field_size &fs_, time_state<R> &ts_,
+	slice_output_manager(time_state<R> &ts_,
 		field<R> &phi_, field<R> &chi_, field<R> &phidot_, field<R> &chidot_,
 		grad_computer<R> &gc_,
 		int slicedim_ = 3, int slicelength_ = 0, int sliceskip_ = 1,
 		bool sliceaverage_ = true, bool sliceflt_ = true)
-		: fs(fs_), upfs(fs_.n), ts(ts_), phi(phi_), chi(chi_),
+		: ts(ts_), phi(phi_), chi(chi_),
 		phidot(phidot_), chidot(chidot_), gc(gc_),
-		slicedim(slicedim_), slicelength(slicelength_ ? slicelength_ : fs_.n),
+		slicedim(slicedim_), slicelength(slicelength_ ? slicelength_ : NGRIDSIZE),
 		sliceskip(sliceskip_), sliceaverage(sliceaverage_), sliceflt(sliceflt_), bin_idx(0) {}
 
 public:
 	void output();
 
 protected:
-	field_size &fs, upfs;
 	time_state<R> &ts;
 	field<R> &phi, &chi;
 	field<R> &phidot, &chidot;

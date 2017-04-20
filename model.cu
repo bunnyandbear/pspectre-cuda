@@ -92,7 +92,7 @@ void model<R>::set_output_directory(const char *uodn)
  * SpectRE Usage:
  * @code
  * ./pspectre [-h]
- * ./pspectre [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-N <int>] [-L <real>] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
+ * ./pspectre [-B <real>] [-V] [-H <name>[,<name>]*] [-R <int>] [-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] [-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] [-I <name>=<value>[,<name>=<value>]*] [--long] [@<file name>]
  * @endcode
  *
  * @li -h: Display usage information and exit
@@ -104,8 +104,6 @@ void model<R>::set_output_directory(const char *uodn)
  *      phi
  *      chi
  * @endcode
- * @li -N \<int\>: The number of grid points per side of the box
- * @li -L \<real\>: The physical size of the box
  * @li -R \<int\>: The random seed
  * @li -o \<dir name\>: Set the output directory name
  * @li -t \<real\>[:\<real\>]: Set dt with an optional start time in program units
@@ -118,7 +116,7 @@ void model<R>::set_output_directory(const char *uodn)
  *	ics_eff_size
  *	(a0 can be specified when H0 is specified by appending :\<a0\> to the H0 value;
  *	 Hdot0 can be similarly appended for use with power-law background expansion)
- *	(ics_eff_size is an integer <= N)
+ *	(ics_eff_size is an integer <= NGRIDSIZE)
  * @endcode
  * @li -s \<name\>[,\<name\>]*: Enable slice output of a variable. Valid variables are:
  * @code
@@ -191,7 +189,7 @@ void model<R>::set_output_directory(const char *uodn)
  * sets all output intervals to 1 time step (the default is 25).
  *
  * @code
- * ./pspectre -N 128 -t 0.0005 -l -I all=1
+ * ./pspectre -t 0.0005 -l -I all=1
  * @endcode
  *
  * The following runs the model with the default parameters and has binary slice outputs for the energy density, pressure
@@ -205,7 +203,7 @@ void model<R>::set_output_directory(const char *uodn)
 
 template <typename R>
 model<R>::model(int argc, char *argv[])
-	: fs(64), homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
+	: homo_ic_phi(false), homo_ic_chi(false), seed(1), tf(200.0),
 	  scale_interval(25), energy_interval(25),
 	  screen_interval(25), slice_interval(25),
 	  scale_intervals(scale_interval, 0.0, scale_interval, "t", "scale-factor output interval"),
@@ -287,7 +285,7 @@ model<R>::model(int argc, char *argv[])
 
 	string odn;
 
-	while ((opt = getopt(argc, argv, ":rlVB:hH:ON:P:L:R:p:o:t:T:A:s:S:I:z:e")) != -1) {
+	while ((opt = getopt(argc, argv, ":VB:hH:P:R:p:o:t:T:A:s:S:I:e")) != -1) {
 		switch (opt) {
 		case 'h':
 			help_requested = true;
@@ -317,9 +315,6 @@ model<R>::model(int argc, char *argv[])
 			break;
 		case 'e':
 			mp.pwr_exp = true;
-			break;
-		case 'N':
-			fs.n = atoi(optarg);
 			break;
 		case 'P':
 			if (atoi(optarg) != 1) {
@@ -604,7 +599,7 @@ model<R>::model(int argc, char *argv[])
 		
 		hout << "SpectRE Usage:" << endl;
 		hout << argv[0] << " [-h]" << endl;
-		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-N <int>] [-L <real>] [-R <int>] "
+		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-L <real>] [-R <int>] "
 			"[-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] "
 			"[-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] "
 			"[-I <name>=<value>[,<name>=<value>]*] "
@@ -623,7 +618,6 @@ model<R>::model(int argc, char *argv[])
 			hout << "\t\t" << field_names[i] << endl;
 		}
 
-		hout << "\t-N <int>: The number of grid points per side of the box" << endl;
 		hout << "\t-L <real>: The physical size of the box" << endl;
 		hout << "\t-R <int>: The random seed" << endl;
 		hout << "\t-o <dir name>: Set the output directory name" << endl;
@@ -637,7 +631,7 @@ model<R>::model(int argc, char *argv[])
 		}
 		hout << "\t\t(a0 can be specified when H0 is specified by appending :<a0> to the H0 value" << endl;
 		hout << "\t\t Hdot0 can be similarly appended for use with power-law background expansion)" << endl;
-		hout << "\t\t(ics_eff_size is an integer <= N)" << endl;
+		hout << "\t\t(ics_eff_size is an integer <= NGRIDSIZE)" << endl;
 
 		hout << "\t-s <name>[,<name>]*: Enable slice output of a variable. Valid variables are:" << endl;
 		
@@ -675,12 +669,10 @@ model<R>::model(int argc, char *argv[])
 	
 	cout << "Using " << precision_name<R>() << " precision." << endl;
 
-	fs.calculate_size_totals();
-
-	phi.construct(fs, fft_plans);
-	phidot.construct(fs, fft_plans);
-	chi.construct(fs, fft_plans);
-	chidot.construct(fs, fft_plans);
+	phi.construct(fft_plans);
+	phidot.construct(fft_plans);
+	chi.construct(fft_plans);
+	chidot.construct(fft_plans);
 
 	char *swd = 0; std::size_t swdl = 1024;
 	do {
@@ -693,8 +685,8 @@ model<R>::model(int argc, char *argv[])
 
 	set_output_directory(odn.c_str());
 
-	gc = new grad_computer<R>(fs, phi, chi, fft_plans);
-	som = new slice_output_manager<R>(fs, ts, phi, chi, phidot, chidot, *gc,
+	gc = new grad_computer<R>(phi, chi, fft_plans);
+	som = new slice_output_manager<R>(ts, phi, chi, phidot, chidot, *gc,
 					  slicedim, slicelength, sliceskip, sliceaverage, sliceflt);
 }
 
@@ -783,7 +775,7 @@ void model<R>::set_initial_conditions()
 
 	if (!homo_ic_phi || !homo_ic_chi) {
 		initializer<R> *init = (initializer<R> *) new le_style_initializer<R>
-			(fs, phi, phidot, chi, chidot, ts.adot, len0);
+			(phi, phidot, chi, chidot, ts.adot, len0);
 
 		init->initialize();
 
@@ -830,13 +822,13 @@ void model<R>::set_initial_conditions()
 	chidot.divby(ics_scale);
 		
 	// Note that the 0-mode in Fourier space is the sum over all points in position space.
-	phi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * fs.total_gridpoints * MP_PHI0;
+	phi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * NTOTAL_GRIDPOINTS * MP_PHI0;
 	phi.mdata[0][1] = 0.;
-	phidot.mdata[0][0] = fs.total_gridpoints * phidot0pr;
+	phidot.mdata[0][0] = NTOTAL_GRIDPOINTS * phidot0pr;
 	phidot.mdata[0][1] = 0.;
-	chi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * fs.total_gridpoints * MP_CHI0;
+	chi.mdata[0][0] = RESCALE_A * pow(ts.a, RESCALE_R) * NTOTAL_GRIDPOINTS * MP_CHI0;
 	chi.mdata[0][1] = 0.;
-	chidot.mdata[0][0] = fs.total_gridpoints * chidot0pr;
+	chidot.mdata[0][0] = NTOTAL_GRIDPOINTS * chidot0pr;
 	chidot.mdata[0][1] = 0.;
 
 	if (ics_eff_size > 0) {
@@ -851,12 +843,12 @@ void model<R>::set_initial_conditions()
 		int effpmax = ics_eff_size/2;
 		int effpmin = -effpmax+1;
 
-		dim3 num_blocks(fs.n, fs.n);
-		dim3 num_threads(fs.n/2+1, 1);
-		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, fs.n, effpmax, effpmin);
-		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, fs.n, effpmax, effpmin);
+		dim3 num_blocks(NGRIDSIZE, NGRIDSIZE);
+		dim3 num_threads(NGRIDSIZE/2+1, 1);
+		field_init_kernel<<<num_blocks, num_threads>>>(phi.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chi.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(phidot.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
+		field_init_kernel<<<num_blocks, num_threads>>>(chidot.mdata.ptr, NGRIDSIZE, effpmax, effpmin);
 	}
 }
 
@@ -890,7 +882,7 @@ template <typename R>
 void model<R>::evolve(integrator<R> *ig)
 {
 	int counter = 0;
-	energy_outputter<R> eo(fs, mp, ts, phi, chi, phidot, chidot);
+	energy_outputter<R> eo(mp, ts, phi, chi, phidot, chidot);
 	ofstream scaleof("sf.tsv");
 	scaleof << setprecision(30) << fixed;
 
@@ -981,7 +973,7 @@ void model<R>::run()
 
 	set_initial_conditions();
 	
-	integrator<R> *ig = (integrator<R> *) new verlet<R>(fs, mp, ts, phi, phidot, chi, chidot, fft_plans);
+	integrator<R> *ig = (integrator<R> *) new verlet<R>(mp, ts, phi, phidot, chi, chidot, fft_plans);
 
 	cout << "Beginning field evolution..." << endl;
 	evolve(ig);
@@ -995,7 +987,7 @@ void model<R>::write_info_file()
 	info_file << setprecision(30);
 	info_file << scientific;
 	
-	info_file << "N: " << fs.n << endl;
+	info_file << "N: " << NGRIDSIZE << endl;
 	info_file << "final time: " << tf << endl;
 	info_file << "gamma_phi: " << GAMMA_PHI << endl;
 	info_file << "gamma_chi: " << GAMMA_CHI << endl;

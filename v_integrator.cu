@@ -62,15 +62,15 @@ R v_integrator<R>::integrate(field<R> &phi, field<R> &chi, R a_t)
 	phi.switch_state(position);
 	chi.switch_state(position);
 
-	auto total_V_arr = double_array_gpu(fs.n, fs.n, fs.n);
-	dim3 nr_blocks(fs.n, fs.n);
-	dim3 nr_threads(fs.n, 1);
+	auto total_V_arr = double_array_gpu(NGRIDSIZE, NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_threads(NGRIDSIZE, 1);
 	v_integrator_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						       total_V_arr.ptr(),
-						       a_t, fs.n);
+						       a_t, NGRIDSIZE);
 	double total_V = total_V_arr.sum();
 
-	return total_V / (3.0 * 3 * 3 * fs.total_gridpoints);
+	return total_V / (3.0 * 3 * 3 * NTOTAL_GRIDPOINTS);
 }
 
 // Explicit instantiations

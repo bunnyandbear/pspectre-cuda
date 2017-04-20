@@ -38,6 +38,12 @@
 #include <set>
 
 #include <cmath>
+#include <cufftw.h>
+
+#define NGRIDSIZE			(256)
+#define NTOTAL_GRIDPOINTS		(NGRIDSIZE * NGRIDSIZE * NGRIDSIZE)
+#define NTOTAL_MOMENTUM_GRIDPOINTS	(NGRIDSIZE * NGRIDSIZE * (NGRIDSIZE/2 + 1))
+#define POWER_LENGTH			(int(sqrt(3)*0.5*NGRIDSIZE) + 1)
 
 // Monodromy potential: c s^2 ([ 1 + (phi/s)^2 ]^e - 1)
 // = c ( e phi^2 + (1/2) s^{-2} (e^2 - e) phi^4 + (1/6) s^{-4} (e^3 - 3 e^2 + 2 e) phi^6 + ...

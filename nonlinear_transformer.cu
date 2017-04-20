@@ -123,14 +123,14 @@ void nonlinear_transformer<R>::transform(field<R> &phi, field<R> &chi, R a_t, fi
 		chi_md.switch_state(position);
 	}
 
-	dim3 nr_blocks(fs.n, fs.n);
-	dim3 nr_threads(fs.n, 1);
+	dim3 nr_blocks(NGRIDSIZE, NGRIDSIZE);
+	dim3 nr_threads(NGRIDSIZE, 1);
 	nonlin_trans_kernel<<<nr_blocks, nr_threads>>>(phi.data.ptr, chi.data.ptr,
 						       phi2chi.data.ptr, chi2phi.data.ptr,
 						       phi_md.data.ptr, chi_md.data.ptr,
 						       phi3.data.ptr, chi3.data.ptr,
 						       phi5.data.ptr, chi5.data.ptr,
-						       a_t, fs.n);
+						       a_t, NGRIDSIZE);
 
 	phi2chi.switch_state(final_state);
 	chi2phi.switch_state(final_state);
