@@ -4,7 +4,7 @@
 # -r
 
 # Use LatticeEasy-style initial conditions (default is DEFROST-style initial conditions)
--l
+#-l
 
 # The base length scale (default is 1.0 to match LatticeEasy)
 # -B 100.0
@@ -15,7 +15,7 @@
 
 # The number of grid points per side of the box
 # 
--N 256
+#-N 256
 
 # The padding factor used for position-space integration
 # -P 2
@@ -23,7 +23,7 @@
 #-o mon_check
 
 # The physical size of the box
--L 6
+#-L 6
 
 # The random seed
 # -R 5

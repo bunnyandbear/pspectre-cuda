@@ -1,10 +1,10 @@
 unset SM_ARCH
 if [[ $(uname -n | grep build) ]]; then
+#    module load GCC/4.9.2
+#    module load CUDA/7.5.18
     module load GCC/5.4.0
     module load CUDA/8.0.61
     SM_ARCH="-arch sm_35"
-#    module load GCC/4.9.2
-#    module load CUDA/7.5.18
 else
     echo "Make sure you have CUDA toolchain installed."
     SM_ARCH="-arch sm_35"
