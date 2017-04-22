@@ -7,7 +7,7 @@ batchfile=$(mktemp)
 echo "#!/bin/bash
 #SBATCH -J batch_job_cuda
 #SBATCH -A uoa00436
-#SBATCH --time=05:00:00
+#SBATCH --time=10:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4G
 #SBATCH --gres=gpu:1

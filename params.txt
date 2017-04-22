@@ -10,7 +10,7 @@
 
 # Set dt with an optional start time in program units
 # 
--t 0.00625
+-t 0.003125
 
 # The final time in program units
 # 
@@ -22,7 +22,7 @@
 -I energy=200
 #-I spectra=200
 -I screen=100
--I slice=20
+-I slice=40
 #-I stats=10
 #-I twoptcorr=1000
 
