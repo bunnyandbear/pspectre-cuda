@@ -599,7 +599,7 @@ model<R>::model(int argc, char *argv[])
 		
 		hout << "SpectRE Usage:" << endl;
 		hout << argv[0] << " [-h]" << endl;
-		hout << argv[0] << " [-r] [-l [-B <real>]] [-V] [-H <name>[,<name>]*] [-L <real>] [-R <int>] "
+		hout << argv[0] << " [-B <real>] [-V] [-H <name>[,<name>]*] [-R <int>] "
 			"[-o <dir name>] [-t <real>[:<real>]] [-T <real>] [-A <real>] "
 			"[-p <name>=<value>[,<name>=<value>]*] [-e] [-s <name>[,<name>]*] [-S <name>[=<value>][,<name>[=<value>]]*] "
 			"[-I <name>=<value>[,<name>=<value>]*] "

@@ -49,7 +49,7 @@
 // = c ( e phi^2 + (1/2) s^{-2} (e^2 - e) phi^4 + (1/6) s^{-4} (e^3 - 3 e^2 + 2 e) phi^6 + ...
 
 #define M_PHI (0.000022139442217092964)
-#define MP_LEN (6.0)
+#define MP_LEN (3.0)
 #define MP_PHI0 (0.08211141279686777)
 #define MP_PHIDOT0 (0.0176648818699687)
 #define RESCALE_A (1/MP_PHI0)
